@@ -1,0 +1,1059 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- CHANGE THIS: Neeche wali line mein content ke andar apne studio ka short description likhein -->
+    <meta name="description" content="Shubhda Studios - Premium Wedding & Event Photography in Narnaul, Haryana. Capturing timeless Indian wedding stories.">
+    
+    <!-- CHANGE THIS: Ye wo naam hai jo browser ke tab par dikhai dega -->
+    <title>Shubhda Studios | Wedding Photography Narnaul</title>
+    
+    <!-- Google Fonts (Isse mat chedein, ye font styles hain) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome for Icons (Icons ke liye, isse mat chedein) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* --- VARIABLES & RESET --- */
+        /* Yahan par colors set kiye gaye hain. Agar aap color change karna chahte hain to hex code badal sakte hain */
+        :root {
+            --bg-dark: #0f0f0f;       /* Website ka background color */
+            --bg-card: #1a1a1a;       /* Card ya box ka background color */
+            --text-primary: #f5f5f5;  /* Main text color (White type) */
+            --text-secondary: #aaaaaa;/* Halki text color (Grey type) */
+            --gold-accent: #d4af37;   /* Gold color jo highlight ke liye use hua hai */
+            --gold-hover: #b4942b;    /* Button par mouse le jaane par jo color aayega */
+            --transition: all 0.4s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Lato', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        h1, h2, h3, h4 {
+            font-family: 'Playfair Display', serif;
+            font-weight: 700;
+        }
+
+        a {
+            text-decoration: none;
+            color: inherit;
+            transition: var(--transition);
+        }
+
+        ul {
+            list-style: none;
+        }
+
+        img {
+            max-width: 100%;
+            display: block;
+        }
+
+        /* --- UTILITIES --- */
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 15px;
+        }
+
+        .section-padding {
+            padding: 100px 0;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .gold-text {
+            color: var(--gold-accent);
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 14px 35px;
+            background: transparent;
+            border: 1px solid var(--gold-accent);
+            color: var(--gold-accent);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: var(--transition);
+            margin-top: 20px;
+        }
+
+        .btn:hover {
+            background: var(--gold-accent);
+            color: var(--bg-dark);
+        }
+
+        .section-title {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            position: relative;
+            display: inline-block;
+        }
+
+        .section-subtitle {
+            font-family: 'Lato', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            font-size: 0.8rem;
+            color: var(--gold-accent);
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        /* --- HEADER & NAV --- */
+        header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 1000;
+            padding: 20px 0;
+            transition: var(--transition);
+            background: rgba(15, 15, 15, 0.8);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            letter-spacing: 1px;
+            /* CHANGE THIS: Logo aur Text ko ek line mein laane ke liye settings */
+            display: flex;
+            align-items: center;
+            gap: 15px; /* Logo aur naam ke beech ki doori */
+        }
+
+        .logo span {
+            color: var(--gold-accent);
+        }
+
+        /* CHANGE THIS: Logo Image ka size control karne ke liye */
+        .logo img {
+            height: 50px; /* Logo ki height yahan se badhayein ya ghatayein */
+            width: auto;
+            object-fit: contain;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 30px;
+        }
+
+        .nav-links a {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            position: relative;
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 0;
+            height: 1px;
+            background: var(--gold-accent);
+            transition: var(--transition);
+        }
+
+        .nav-links a:hover {
+            color: var(--gold-accent);
+        }
+
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        .mobile-menu-btn {
+            display: none;
+            color: var(--text-primary);
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        /* --- HERO SECTION --- */
+        #hero {
+            height: 100vh;
+            width: 100%;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .hero-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+            z-index: -1;
+            transition: opacity 1.5s ease-in-out;
+            opacity: 0;
+        }
+
+        .hero-bg.active {
+            opacity: 1;
+            animation: zoomEffect 10s infinite alternate;
+        }
+
+        @keyframes zoomEffect {
+            0% { transform: scale(1); }
+            100% { transform: scale(1.1); }
+        }
+
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.3), rgba(0,0,0,0.7));
+            z-index: 0;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            padding: 0 20px;
+            opacity: 0;
+            transform: translateY(30px);
+            animation: fadeUp 1s forwards 0.5s;
+        }
+
+        .hero-content h1 {
+            font-size: 3.5rem;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 10px rgba(0,0,0,0.5);
+        }
+
+        .hero-content p {
+            font-size: 1.2rem;
+            letter-spacing: 2px;
+            margin-bottom: 30px;
+            font-weight: 300;
+        }
+
+        .scroll-down {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: var(--text-primary);
+            font-size: 1.5rem;
+            animation: bounce 2s infinite;
+            z-index: 2;
+            opacity: 0.7;
+        }
+
+        /* --- ABOUT SECTION --- */
+        #about {
+            background-color: var(--bg-dark);
+        }
+
+        .about-content {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 50px;
+        }
+
+        .about-img {
+            flex: 1;
+            min-width: 300px;
+            position: relative;
+        }
+
+        .about-img img {
+            border-radius: 2px;
+            filter: grayscale(20%);
+            transition: var(--transition);
+        }
+
+        .about-img:hover img {
+            filter: grayscale(0%);
+        }
+
+        .about-img::before {
+            content: '';
+            position: absolute;
+            top: -15px;
+            left: -15px;
+            width: 100%;
+            height: 100%;
+            border: 1px solid var(--gold-accent);
+            z-index: -1;
+        }
+
+        .about-text {
+            flex: 1;
+            min-width: 300px;
+        }
+
+        .about-text p {
+            margin-bottom: 20px;
+            color: var(--text-secondary);
+        }
+
+        /* --- PORTFOLIO SECTION --- */
+        #portfolio {
+            background-color: var(--bg-card);
+        }
+
+        .portfolio-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 40px;
+        }
+
+        .portfolio-item {
+            position: relative;
+            overflow: hidden;
+            height: 400px;
+            cursor: pointer;
+        }
+
+        .portfolio-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.6s ease;
+        }
+
+        .portfolio-item:hover img {
+            transform: scale(1.1);
+        }
+
+        .portfolio-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            padding: 30px 20px;
+            background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
+            transform: translateY(100%);
+            transition: var(--transition);
+        }
+
+        .portfolio-item:hover .portfolio-overlay {
+            transform: translateY(0);
+        }
+
+        .portfolio-overlay h3 {
+            font-size: 1.4rem;
+            color: var(--gold-accent);
+            margin-bottom: 5px;
+        }
+
+        .portfolio-overlay p {
+            font-size: 0.9rem;
+            color: #ddd;
+        }
+
+        /* --- SERVICES / FEATURES --- */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+            margin-top: 50px;
+        }
+
+        .feature-card {
+            text-align: center;
+            padding: 30px;
+            border: 1px solid rgba(255,255,255,0.05);
+            transition: var(--transition);
+        }
+
+        .feature-card:hover {
+            border-color: var(--gold-accent);
+            background: rgba(255,255,255,0.02);
+        }
+
+        .feature-icon {
+            font-size: 2.5rem;
+            color: var(--gold-accent);
+            margin-bottom: 20px;
+        }
+
+        .feature-card h3 {
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+
+        .feature-card p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        /* --- CONTACT SECTION --- */
+        #contact {
+            background-color: var(--bg-dark);
+            position: relative;
+        }
+
+        .contact-wrapper {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 50px;
+            margin-top: 40px;
+        }
+
+        .contact-info {
+            flex: 1;
+            min-width: 300px;
+        }
+
+        .info-item {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 30px;
+        }
+
+        .info-icon {
+            font-size: 1.5rem;
+            color: var(--gold-accent);
+            margin-right: 20px;
+            margin-top: 5px;
+        }
+
+        .info-content h4 {
+            margin-bottom: 5px;
+            font-size: 1.1rem;
+        }
+
+        .info-content p {
+            color: var(--text-secondary);
+        }
+
+        .contact-form {
+            flex: 1.5;
+            min-width: 300px;
+            background: var(--bg-card);
+            padding: 40px;
+            border-top: 3px solid var(--gold-accent);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 20px;
+        }
+
+        .form-row .form-group {
+            flex: 1;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.1);
+            color: var(--text-primary);
+            font-family: 'Lato', sans-serif;
+            transition: var(--transition);
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--gold-accent);
+            background: rgba(255,255,255,0.02);
+        }
+
+        textarea {
+            resize: vertical;
+        }
+
+        /* --- FOOTER --- */
+        footer {
+            background-color: #050505;
+            padding: 50px 0 20px;
+            text-align: center;
+            border-top: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .footer-logo {
+            font-family: 'Playfair Display', serif;
+            font-size: 2rem;
+            margin-bottom: 20px;
+            color: var(--text-primary);
+        }
+
+        .social-links {
+            margin-bottom: 30px;
+        }
+
+        .social-links a {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            line-height: 40px;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 50%;
+            margin: 0 10px;
+            font-size: 1rem;
+            transition: var(--transition);
+        }
+
+        .social-links a:hover {
+            border-color: var(--gold-accent);
+            color: var(--gold-accent);
+        }
+
+        .copyright {
+            color: #666;
+            font-size: 0.8rem;
+            margin-top: 20px;
+            border-top: 1px solid rgba(255,255,255,0.05);
+            padding-top: 20px;
+        }
+
+        /* --- ANIMATIONS & UTILS --- */
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {transform: translateY(0) translateX(-50%);}
+            40% {transform: translateY(-10px) translateX(-50%);}
+            60% {transform: translateY(-5px) translateX(-50%);}
+        }
+
+        .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.8s ease-out;
+        }
+
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* --- RESPONSIVE --- */
+        @media (max-width: 768px) {
+            .hero-content h1 {
+                font-size: 2.5rem;
+            }
+
+            .mobile-menu-btn {
+                display: block;
+            }
+
+            .nav-links {
+                position: fixed;
+                top: 70px;
+                left: 0;
+                width: 100%;
+                background: var(--bg-card);
+                flex-direction: column;
+                align-items: center;
+                padding: 20px 0;
+                gap: 20px;
+                transform: translateY(-150%);
+                transition: var(--transition);
+                border-bottom: 1px solid var(--gold-accent);
+            }
+
+            .nav-links.active {
+                transform: translateY(0);
+            }
+
+            .form-row {
+                flex-direction: column;
+                gap: 0;
+            }
+
+            .about-img {
+                order: 2;
+            }
+            .about-text {
+                order: 1;
+            }
+        }
+        
+        /* Form Message Toast */
+        #form-message {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--gold-accent);
+            color: #000;
+            padding: 15px 25px;
+            border-radius: 4px;
+            transform: translateY(150%);
+            transition: transform 0.3s ease;
+            z-index: 2000;
+            font-weight: bold;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+        }
+        
+        #form-message.show {
+            transform: translateY(0);
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- Header Section (Top Bar) -->
+    <header>
+        <div class="container">
+            <nav>
+                <!-- CHANGE THIS: Logo Section -->
+                <a href="#" class="logo">
+                    <!-- Yahan aapka logo file laga diya hai. Make sure file ka naam same ho. -->
+                    <img src="media/goldion logo.webp" alt="Shubhda Studios Logo">
+                    
+                    <!-- Ye aapka naam hai -->
+                    <div>Shubhda <span>Studios</span></div>
+                </a>
+
+                <div class="mobile-menu-btn" id="mobile-menu-btn">
+                    <i class="fas fa-bars"></i>
+                </div>
+                <ul class="nav-links" id="nav-links">
+                    <li><a href="#hero">Home</a></li>
+                    <li><a href="#about">About</a></li>
+                    <li><a href="#portfolio">Portfolio</a></li>
+                    <li><a href="#contact">Contact</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Hero Section (Main Badi Photo) -->
+    <section id="hero">
+        <!-- CHANGE THIS: Background Images -->
+        <!-- Neeche 3 lines mein images hain. 'url('...')' ke andar apna photo ka link dalein -->
+        <div class="hero-bg active" style="background-image: url('media/R6II3283.webp');"></div>
+        <div class="hero-bg" style="background-image: url('media/w.webp');"></div>
+        <div class="hero-bg" style="background-image: url('media/R6II3632.webp');"></div>       
+        
+        <div class="overlay"></div>
+        
+        <div class="container hero-content">
+            <!-- CHANGE THIS: Hero Subheading -->
+            <span class="section-subtitle">Wedding & Event Photography</span>
+            
+            <!-- CHANGE THIS: Main Heading (Bada Text) -->
+            <h1>Capturing Timeless <br> <span class="gold-text">Wedding Stories</span></h1>
+            
+            <!-- CHANGE THIS: Location Text -->
+            <p>Premium Cinematic Photography in Narnaul, Haryana</p>
+            
+            <!-- CHANGE THIS: Button Text -->
+            <a href="#contact" class="btn">Book Your Date</a>
+        </div>
+
+        <a href="#about" class="scroll-down">
+            <i class="fas fa-chevron-down"></i>
+        </a>
+    </section>
+
+    <!-- About Section -->
+    <section id="about" class="section-padding">
+        <div class="container">
+            <div class="about-content reveal">
+                <div class="about-text">
+                    <span class="section-subtitle">Who We Are</span>
+                    
+                    <!-- CHANGE THIS: About Title -->
+                    <h2 class="section-title">Preserving Emotions,<br>Telling story with every shot.</h2>
+                    
+                    <!-- CHANGE THIS: About Paragraphs (Apne bare mein likhein) -->
+                    <p>At <strong>Shubhda Studios</strong>, based in the heart of Narnaul, Haryana, we don’t just take pictures; we freeze moments. With years of experience in the Indian wedding industry, we understand that a wedding is a tapestry of rituals, emotions, and legacy.</p>
+                    <p>Our style is a blend of modern cinematic flair and traditional warmth. Whether it's the tearful Vidai or the joyous Haldi, we ensure every frame tells a story that you will cherish for generations.</p>
+                    
+                    <a href="#portfolio" class="btn">View Our Work</a>
+                </div>
+                <div class="about-img">
+                    <!-- CHANGE THIS: About Image. 'src' ke andar naya link dalein -->
+                    <img src="media/DSC_9291.webp" alt="Wedding Photographer">
+                </div>
+            </div>
+
+            <!-- Features -->
+            <div class="features-grid reveal">
+                <div class="feature-card">
+                    <i class="fas fa-camera-retro feature-icon"></i>
+                    <!-- CHANGE THIS: Service 1 -->
+                    <h3>Cinematic Shoots</h3>
+                    <p>High-definition storytelling with a film-like aesthetic.</p>
+                </div>
+                <div class="feature-card">
+                    <i class="fas fa-heart feature-icon"></i>
+                    <!-- CHANGE THIS: Service 2 -->
+                    <h3>Candid Moments</h3>
+                    <p>Capturing raw emotions and unposed laughter.</p>
+                </div>
+                <div class="feature-card">
+                    <i class="fas fa-image feature-icon"></i>
+                    <!-- CHANGE THIS: Service 3 -->
+                    <h3>Premium Albums</h3>
+                    <p>Luxury handcrafted photo albums to preserve memories.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Portfolio Section (Photos ki Gallery) -->
+    <section id="portfolio" class="section-padding">
+        <div class="container">
+            <div class="text-center reveal">
+                <span class="section-subtitle">Our Masterpieces</span>
+                <h2 class="section-title">Selected Works</h2>
+            </div>
+
+            <!-- Yahan se Photos shuru hoti hain -->
+            <div class="portfolio-grid reveal">
+                
+                <!-- PHOTO ITEM 1 -->
+                <div class="portfolio-item">
+                    <!-- CHANGE THIS: Image Link badlein 'src' mein -->
+                    <img src="media/IMG_9452.webp" alt="Traditional Indian Wedding Photography in Narnaul Haryana">
+                    <div class="portfolio-overlay">
+                        <!-- CHANGE THIS: Photo ka Title aur Description -->
+                        <h3>The Royal Vows</h3>
+                        <p>Traditional Wedding in Haryana</p>
+                    </div>
+                </div>
+
+                <!-- PHOTO ITEM 2 -->
+                <div class="portfolio-item">
+                    <!-- CHANGE THIS: Image Link badlein -->
+                    <img src="media/IMG_7785.webp" alt="Pre Wedding Shoot in Narnaul Haryana">
+                    <div class="portfolio-overlay">
+                        <!-- CHANGE THIS: Title -->
+                        <h3>Sunset & Love</h3>
+                        <p>Pre-Wedding Shoot</p>
+                    </div>
+                </div>
+
+                <!-- PHOTO ITEM 3 -->
+                <div class="portfolio-item">
+                    <!-- CHANGE THIS: Image Link badlein -->
+                    <img src="media/IMG_1084.webp" alt="Bride Portrait Wedding Photography Narnaul">
+                    <div class="portfolio-overlay">
+                        <!-- CHANGE THIS: Title -->
+                        <h3>Bridal Elegance</h3>
+                        <p>Portrait Photography</p>
+                    </div>
+                </div>
+
+                <!-- PHOTO ITEM 4 -->
+                <div class="portfolio-item">
+                    <!-- CHANGE THIS: Image Link badlein -->
+                    <img src="media/IMG_1086.webp" alt="Haldi Ceremony Photography in Narnaul">
+                    <div class="portfolio-overlay">
+                        <!-- CHANGE THIS: Title -->
+                        <h3>Colors of Haldi</h3>
+                        <p>Event Coverage</p>
+                    </div>
+                </div>
+
+                <!-- PHOTO ITEM 5 -->
+                <div class="portfolio-item">
+                    <!-- CHANGE THIS: Image Link badlein -->
+                    <img src="media/IMG_5307.webp" alt="Couple Pose">
+                    <div class="portfolio-overlay">
+                        <!-- CHANGE THIS: Title -->
+                        <h3>Eternal Bond</h3>
+                        <p>Cinematic Couple Shot</p>
+                    </div>
+                </div>
+
+                <!-- PHOTO ITEM 6 -->
+                <div class="portfolio-item">
+                    <!-- CHANGE THIS: Image Link badlein -->
+                    <img src="media/IMG_6470.webp" alt="Jewelry Detail">
+                    <div class="portfolio-overlay">
+                        <!-- CHANGE THIS: Title -->
+                        <h3>Details Matter</h3>
+                        <p>Product & Details</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-center" style="margin-top: 40px;">
+                <a href="gallery/index.html" class="btn">View Full Gallery</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact" class="section-padding">
+        <div class="container">
+            <div class="text-center reveal">
+                <span class="section-subtitle">Get In Touch</span>
+                <h2 class="section-title">Let's Create Magic</h2>
+            </div>
+
+            <div class="contact-wrapper reveal">
+                <div class="contact-info">
+                    <div class="info-item">
+                        <i class="fas fa-map-marker-alt info-icon"></i>
+                        <div class="info-content">
+                            <!-- CHANGE THIS: Address badalne ke liye yahan edit karein -->
+                            <h4>Location</h4>
+                            <p>Shubhda Studios, Dohar Kalan ,<br>Narnaul, Haryana, India - 123001</p>
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <i class="fas fa-phone-alt info-icon"></i>
+                        <div class="info-content">
+                            <!-- CHANGE THIS: Phone Number yahan badlein
+                            <h4>Phone</h4>
+                            <p>+91 98XXX XXXXX</p> -->
+                        
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <i class="fas fa-envelope info-icon"></i>
+                        <div class="info-content">
+                            <!-- CHANGE THIS: Email ID yahan badlein -->
+                            <h4>Email</h4>
+                            <p>shubhdastudios@gmail.com</p>
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <i class="fas fa-clock info-icon"></i>
+                        <div class="info-content">
+                            <!-- CHANGE THIS: Shop Timings yahan badlein -->
+                            <h4>Hours</h4>
+                            <p>Mon - Sun: 10:00 AM - 8:00 PM</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Inquiry Form (Ye code form ka hai)-->
+                <form class="contact-form" id="inquiryForm" action="https://formspree.io/f/mqeeaonv" method="POST">
+    <div class="form-row">
+        <div class="form-group">
+            <label for="name">Your Name</label>
+            <input type="text" name="name" id="name" required placeholder="Enter full name">
+        </div>
+        <div class="form-group">
+            <label for="phone">Phone Number</label>
+            <input type="tel" name="phone" id="phone" required placeholder="+91 XXXXX XXXXX">
+        </div>
+    </div>
+
+    <div class="form-row">
+        <div class="form-group">
+            <label for="email">Email Address</label>
+            <input type="email" name="email" id="email" required placeholder="name@example.com">
+        </div>
+        <div class="form-group">
+            <label for="eventType">Event Type</label>
+            <select name="eventType" id="eventType" required>
+                <option value="" disabled selected>Select Event</option>
+                <option value="wedding">Wedding</option>
+                <option value="pre-wedding">Pre-Wedding</option>
+                <option value="engagement">Engagement</option>
+                <option value="event">Corporate/Other Event</option>
+            </select>
+        </div>
+    </div> 
+
+    <div class="form-group">
+        <label for="date">Event Date</label>
+        <input type="date" name="date" id="date">
+    </div>
+
+    <div class="form-group">
+        <label for="message">Message</label>
+        <textarea name="message" id="message" rows="4" placeholder="Tell us about your story and requirements..."></textarea>
+    </div>
+
+    <button type="submit" class="btn" style="width: 100%;">Send Enquiry</button>
+</form>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer (Sabse neeche wala hissa) -->
+    <footer>
+        <div class="container">
+            <div class="footer-logo">Shubhda <span>Studios</span></div>
+            <div class="social-links">
+                <!-- CHANGE THIS: Social Media Links. '#' ki jagah apna link dalein (eg: https://instagram.com/mera_page) -->
+                <a href="https://www.instagram.com/shubhdastudios/"><i class="fab fa-instagram"></i></a>
+             <!--   <a href="#"><i class="fab fa-facebook-f"></i></a> -->
+                <a href="https://www.youtube.com/@shubhdastudios"><i class="fab fa-youtube"></i></a>
+               <!-- <a href="#"><i class="fab fa-whatsapp"></i></a> -->
+            </div>
+            <p style="color: #666;">Crafting Memories in Narnaul & Beyond</p>
+            <div class="copyright">
+                <!-- CHANGE THIS: Year or Name in footer -->
+                &copy; 2024 Shubhda Studios. All Rights Reserved.
+            </div>
+        </div>
+    </footer>
+
+    <!-- Toast Notification (Form submit hone par jo message aata hai) -->
+    <div id="form-message">Enquiry Sent Successfully! We will call you soon.</div>
+
+    <script>
+        // --- 1. Background Slider for Hero Section ---
+        const slides = document.querySelectorAll('.hero-bg');
+        let currentSlide = 0;
+
+        function changeSlide() {
+            slides[currentSlide].classList.remove('active');
+            currentSlide = (currentSlide + 1) % slides.length;
+            slides[currentSlide].classList.add('active');
+        }
+
+        // CHANGE THIS: Slider Speed. 5000 ka matlab 5 second. Isse badha ya ghata sakte hain.
+        setInterval(changeSlide, 5000); 
+
+        // --- 2. Mobile Menu Toggle (Isse mat chedein) ---
+        const menuBtn = document.getElementById('mobile-menu-btn');
+        const navLinks = document.getElementById('nav-links');
+        const links = document.querySelectorAll('.nav-links a');
+
+        menuBtn.addEventListener('click', () => {
+            navLinks.classList.toggle('active');
+            // Toggle icon
+            const icon = menuBtn.querySelector('i');
+            if (navLinks.classList.contains('active')) {
+                icon.classList.remove('fa-bars');
+                icon.classList.add('fa-times');
+            } else {
+                icon.classList.remove('fa-times');
+                icon.classList.add('fa-bars');
+            }
+        });
+
+        // Close menu when a link is clicked
+        links.forEach(link => {
+            link.addEventListener('click', () => {
+                navLinks.classList.remove('active');
+                const icon = menuBtn.querySelector('i');
+                icon.classList.remove('fa-times');
+                icon.classList.add('fa-bars');
+            });
+        });
+
+        // --- 3. Scroll Reveal Animation (Isse mat chedein) ---
+        const revealElements = document.querySelectorAll('.reveal');
+
+        const revealObserver = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('active');
+                    observer.unobserve(entry.target); 
+                }
+            });
+        }, {
+            threshold: 0.15 
+        });
+
+        revealElements.forEach(el => {
+            revealObserver.observe(el);
+        });
+
+        // --- 4. Real Form Handling via Formspree ---
+const form = document.getElementById('inquiryForm');
+const messageToast = document.getElementById('form-message');
+
+form.addEventListener('submit', async (e) => {
+    e.preventDefault(); // Stop the page from refreshing
+    
+    const submitBtn = form.querySelector('button');
+    const originalText = submitBtn.innerText;
+    
+    submitBtn.innerText = "Sending...";
+    submitBtn.disabled = true;
+
+    // Get the form data
+    const formData = new FormData(form);
+
+    try {
+        const response = await fetch(form.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'Accept': 'application/json'
+            }
+        });
+
+        if (response.ok) {
+            // Show Success Message
+            messageToast.innerText = "Enquiry Sent Successfully! We will call you soon.";
+            messageToast.classList.add('show');
+            form.reset();
+        } else {
+            messageToast.innerText = "Oops! Something went wrong. Please try again.";
+            messageToast.classList.add('show');
+        }
+    } catch (error) {
+        messageToast.innerText = "Error connecting to server.";
+        messageToast.classList.add('show');
+    } finally {
+        submitBtn.innerText = originalText;
+        submitBtn.disabled = false;
+        
+        // Hide the toast after 4 seconds
+        setTimeout(() => {
+            messageToast.classList.remove('show');
+        }, 4000);
+    }
+});
+
+    </script>
+</body>
+
+</html>
