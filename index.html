@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Audio Echo & Delay</title>
+    <title>Smart Audio Echo</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -11,14 +11,14 @@
         
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #0f172a; /* Slate 900 */
-            color: #e2e8f0; /* Slate 200 */
+            background-color: #0f172a;
+            color: #e2e8f0;
         }
 
         .visualizer-container {
             position: relative;
             width: 100%;
-            height: 200px;
+            height: 160px;
             background: #1e293b;
             border-radius: 1rem;
             overflow: hidden;
@@ -31,7 +31,7 @@
             height: 100%;
         }
 
-        /* Custom Range Slider */
+        /* Custom Range Slider Styling */
         input[type=range] {
             -webkit-appearance: none;
             width: 100%;
@@ -40,13 +40,18 @@
         
         input[type=range]::-webkit-slider-thumb {
             -webkit-appearance: none;
-            height: 24px;
-            width: 24px;
+            height: 20px;
+            width: 20px;
             border-radius: 50%;
-            background: #3b82f6;
+            background: #60a5fa;
             cursor: pointer;
-            margin-top: -10px;
+            margin-top: -8px;
             box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+            transition: transform 0.1s;
+        }
+
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
         }
 
         input[type=range]::-webkit-slider-runnable-track {
@@ -57,65 +62,91 @@
             border-radius: 2px;
         }
 
-        /* Pulse animation for active state */
-        @keyframes pulse-ring {
-            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
-            70% { transform: scale(1); box-shadow: 0 0 0 15px rgba(59, 130, 246, 0); }
-            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+        .gate-active {
+            color: #ef4444; /* Red for closed gate */
+            text-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
         }
-
-        .active-ring {
-            animation: pulse-ring 2s infinite;
+        .gate-open {
+            color: #22c55e; /* Green for open gate */
+            text-shadow: 0 0 10px rgba(34, 197, 94, 0.4);
+        }
+        
+        /* Threshold Marker on Visualizer */
+        #threshold-line {
+            position: absolute;
+            left: 0;
+            right: 0;
+            border-bottom: 2px dashed rgba(255, 255, 255, 0.2);
+            pointer-events: none;
+            transition: bottom 0.1s;
         }
     </style>
 </head>
 <body class="min-h-screen flex items-center justify-center p-4">
 
-    <div class="max-w-md w-full bg-slate-800 rounded-2xl shadow-2xl p-6 md:p-8 space-y-6 border border-slate-700">
+    <div class="max-w-md w-full bg-slate-800 rounded-2xl shadow-2xl p-6 border border-slate-700 space-y-5">
         
-        <!-- Header -->
-        <div class="text-center space-y-2">
-            <h1 class="text-3xl font-bold text-white tracking-tight">Audio Echo</h1>
-            <p class="text-slate-400 text-sm">Use headphones to avoid feedback loops.</p>
+        <div class="flex justify-between items-start">
+            <div>
+                <h1 class="text-2xl font-bold text-white">Smart Echo</h1>
+                <p class="text-slate-400 text-xs mt-1">Prevents feedback loops automatically</p>
+            </div>
+            <div id="gate-indicator" class="text-xs font-mono border border-slate-600 px-2 py-1 rounded bg-slate-900 text-slate-500">
+                GATE CLOSED
+            </div>
         </div>
 
         <!-- Visualizer -->
-        <div class="visualizer-container ring-1 ring-slate-600/50">
+        <div class="visualizer-container ring-1 ring-slate-600/50 relative">
             <canvas id="visualizer"></canvas>
-            <div id="status-overlay" class="absolute inset-0 flex items-center justify-center bg-slate-900/60 transition-opacity duration-300">
-                <span class="text-slate-300 font-medium tracking-wide">Microphone Off</span>
+            <div id="threshold-line" style="bottom: 10%;"></div>
+            <div id="status-overlay" class="absolute inset-0 flex items-center justify-center bg-slate-900/80 transition-opacity duration-300">
+                <span class="text-slate-300 font-medium tracking-wide">Press Start</span>
             </div>
         </div>
 
-        <!-- Controls -->
-        <div class="space-y-6">
+        <!-- Controls Container -->
+        <div class="space-y-5">
             
             <!-- Delay Control -->
-            <div class="space-y-3 bg-slate-700/30 p-4 rounded-xl border border-slate-700/50">
-                <div class="flex justify-between items-center">
-                    <label class="text-sm font-semibold text-slate-300 flex items-center gap-2">
-                        <i class="fa-solid fa-clock-rotate-left text-blue-400"></i> Delay Time
+            <div class="control-group">
+                <div class="flex justify-between items-center mb-2">
+                    <label class="text-xs font-bold text-slate-400 uppercase tracking-wider">Delay Time</label>
+                    <span id="delay-display" class="text-blue-400 font-mono text-sm">2.0s</span>
+                </div>
+                <input type="range" id="delay-slider" min="0.1" max="5" step="0.1" value="2.0">
+            </div>
+
+            <!-- Noise Gate Threshold (The Fix) -->
+            <div class="control-group bg-slate-700/50 p-3 rounded-lg border border-slate-600/50">
+                <div class="flex justify-between items-center mb-2">
+                    <label class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
+                        <i class="fa-solid fa-filter text-emerald-400"></i> Mic Threshold
                     </label>
-                    <span id="delay-display" class="text-blue-400 font-mono font-bold bg-blue-400/10 px-2 py-0.5 rounded text-sm">2.00s</span>
+                    <span id="gate-display" class="text-emerald-400 font-mono text-sm">10%</span>
                 </div>
-                <input type="range" id="delay-slider" min="0" max="5" step="0.1" value="2.0">
-                <div class="flex justify-between text-xs text-slate-500">
-                    <span>Instant</span>
-                    <span>5s</span>
+                <input type="range" id="gate-slider" min="0" max="50" step="1" value="10">
+                <p class="text-[10px] text-slate-400 mt-2 leading-tight">
+                    *Audio only plays when sound is louder than this line. Increase this if you hear feedback/echos.
+                </p>
+            </div>
+
+            <!-- Output Volume -->
+            <div class="control-group">
+                <div class="flex justify-between items-center mb-2">
+                    <label class="text-xs font-bold text-slate-400 uppercase tracking-wider">Output Volume</label>
+                    <span id="volume-display" class="text-purple-400 font-mono text-sm">80%</span>
                 </div>
+                <input type="range" id="volume-slider" min="0" max="100" step="1" value="80">
             </div>
 
             <!-- Main Action Button -->
-            <button id="toggle-btn" class="w-full group relative flex items-center justify-center gap-3 py-4 rounded-xl bg-slate-700 hover:bg-slate-600 text-white font-bold transition-all duration-200 border border-slate-600 hover:border-slate-500 overflow-hidden">
-                <div class="absolute inset-0 bg-gradient-to-r from-blue-600/20 to-purple-600/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                <div id="btn-icon" class="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform">
-                    <i class="fa-solid fa-microphone text-slate-400"></i>
-                </div>
-                <span id="btn-text" class="text-lg z-10">Start Listening</span>
+            <button id="toggle-btn" class="w-full py-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold transition-all shadow-lg hover:shadow-blue-500/20 flex items-center justify-center gap-2">
+                <i class="fa-solid fa-microphone"></i>
+                <span id="btn-text">Start Echo</span>
             </button>
             
-            <!-- Error Message Area -->
-            <div id="error-msg" class="hidden p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm text-center"></div>
+            <div id="error-msg" class="hidden p-3 bg-red-900/50 border border-red-500/30 rounded text-red-200 text-xs text-center"></div>
 
         </div>
     </div>
@@ -124,217 +155,242 @@
         // DOM Elements
         const toggleBtn = document.getElementById('toggle-btn');
         const btnText = document.getElementById('btn-text');
-        const btnIcon = document.getElementById('btn-icon').querySelector('i');
-        const delaySlider = document.getElementById('delay-slider');
-        const delayDisplay = document.getElementById('delay-display');
         const canvas = document.getElementById('visualizer');
         const statusOverlay = document.getElementById('status-overlay');
         const errorMsg = document.getElementById('error-msg');
-        const visualizerContainer = document.querySelector('.visualizer-container');
+        const gateIndicator = document.getElementById('gate-indicator');
+        const thresholdLine = document.getElementById('threshold-line');
 
-        // Audio Context & Nodes
+        // Sliders & Displays
+        const delaySlider = document.getElementById('delay-slider');
+        const delayDisplay = document.getElementById('delay-display');
+        const gateSlider = document.getElementById('gate-slider');
+        const gateDisplay = document.getElementById('gate-display');
+        const volumeSlider = document.getElementById('volume-slider');
+        const volumeDisplay = document.getElementById('volume-display');
+
+        // Audio Variables
         let audioCtx;
         let mediaStream;
         let sourceNode;
         let delayNode;
         let analyser;
-        let gainNode;
+        let outputGainNode;
+        let gateNode; // We'll use a GainNode as a gate
         let animationId;
         let isRunning = false;
+        
+        // Gate Logic Variables
+        let gateThreshold = 0.1; // 0 to 1 scale (based on 0-255 byte data)
+        let currentVolume = 0;
+        let isGateOpen = false;
 
-        // Canvas Context
+        // Canvas Setup
         const canvasCtx = canvas.getContext('2d');
-        let canvasWidth, canvasHeight;
+        let canvasWidth = canvas.parentElement.clientWidth;
+        let canvasHeight = canvas.parentElement.clientHeight;
+        canvas.width = canvasWidth;
+        canvas.height = canvasHeight;
 
-        // Resize handler
-        function resizeCanvas() {
-            canvasWidth = visualizerContainer.clientWidth;
-            canvasHeight = visualizerContainer.clientHeight;
+        window.addEventListener('resize', () => {
+            canvasWidth = canvas.parentElement.clientWidth;
+            canvasHeight = canvas.parentElement.clientHeight;
             canvas.width = canvasWidth;
             canvas.height = canvasHeight;
-        }
-        window.addEventListener('resize', resizeCanvas);
-        resizeCanvas();
+        });
 
-        // Update Delay Display
+        // --- Event Listeners ---
+
         delaySlider.addEventListener('input', (e) => {
-            const val = parseFloat(e.target.value).toFixed(2);
+            const val = e.target.value;
             delayDisplay.innerText = `${val}s`;
-            if (delayNode) {
-                // Smooth transition for delay time to avoid clicks
-                delayNode.delayTime.setTargetAtTime(parseFloat(val), audioCtx.currentTime, 0.1);
-            }
+            if (delayNode) delayNode.delayTime.setTargetAtTime(val, audioCtx.currentTime, 0.1);
         });
 
-        // Toggle Function
-        toggleBtn.addEventListener('click', async () => {
-            if (isRunning) {
-                stopAudio();
-            } else {
-                await startAudio();
-            }
+        gateSlider.addEventListener('input', (e) => {
+            const val = e.target.value;
+            gateDisplay.innerText = `${val}%`;
+            gateThreshold = val / 100; // Convert 0-50 to 0.0-0.5
+            // Update visual line height
+            thresholdLine.style.bottom = `${val}%`; // Scale for visual (rough approx)
         });
+
+        volumeSlider.addEventListener('input', (e) => {
+            const val = e.target.value;
+            volumeDisplay.innerText = `${val}%`;
+            if (outputGainNode) outputGainNode.gain.setTargetAtTime(val / 100, audioCtx.currentTime, 0.05);
+        });
+
+        toggleBtn.addEventListener('click', async () => {
+            if (isRunning) stopAudio();
+            else await startAudio();
+        });
+
+        // --- Audio Logic ---
 
         async function startAudio() {
             try {
                 errorMsg.classList.add('hidden');
                 
-                // Initialize Audio Context (must be after user gesture)
                 const AudioContext = window.AudioContext || window.webkitAudioContext;
                 audioCtx = new AudioContext();
 
-                // Get Microphone Access
+                // 1. Get Mic with Echo Cancellation ENABLED
                 mediaStream = await navigator.mediaDevices.getUserMedia({ 
                     audio: {
-                        echoCancellation: false, // Turn off system echo cancellation for cleaner raw audio
-                        autoGainControl: false,
-                        noiseSuppression: false
+                        echoCancellation: true, // Crucial for preventing feedback
+                        noiseSuppression: true,
+                        autoGainControl: true
                     } 
                 });
 
-                // Create Nodes
+                // 2. Create Nodes
                 sourceNode = audioCtx.createMediaStreamSource(mediaStream);
-                
-                // Delay Node: Max delay 10s to be safe
+                analyser = audioCtx.createAnalyser();
+                analyser.fftSize = 256; // Smaller FFT for faster reaction
+                analyser.smoothingTimeConstant = 0.3;
+
                 delayNode = audioCtx.createDelay(10.0);
                 delayNode.delayTime.value = parseFloat(delaySlider.value);
 
-                // Analyser for visualizer
-                analyser = audioCtx.createAnalyser();
-                analyser.fftSize = 2048;
+                // The Gate Node blocks sound going to the delay line
+                gateNode = audioCtx.createGain();
+                gateNode.gain.value = 0; // Start closed (silence)
 
-                // Gain Node (Master Volume - safety)
-                gainNode = audioCtx.createGain();
-                gainNode.gain.value = 1.0;
+                outputGainNode = audioCtx.createGain();
+                outputGainNode.gain.value = parseFloat(volumeSlider.value) / 100;
 
-                // Connect Graph: 
-                // Source -> Analyser (Visualizer) -> Delay -> Gain -> Destination (Speakers)
-                
-                // 1. Connect Source to Analyser (so we see what we speak immediately)
+                // 3. Connect Graph
+                // Mic -> Analyser (to measure volume)
                 sourceNode.connect(analyser);
-                
-                // 2. Connect Analyser to Delay (pass through)
-                analyser.connect(delayNode);
-                
-                // 3. Connect Delay to Gain
-                delayNode.connect(gainNode);
-                
-                // 4. Connect Gain to Output
-                gainNode.connect(audioCtx.destination);
 
-                // Update UI State
+                // Mic -> Gate -> Delay -> OutputGain -> Speaker
+                sourceNode.connect(gateNode);
+                gateNode.connect(delayNode);
+                delayNode.connect(outputGainNode);
+                outputGainNode.connect(audioCtx.destination);
+
                 isRunning = true;
-                updateUIState(true);
-                
-                // Start Visualizer
-                drawVisualizer();
+                updateUI(true);
+                processAudioLoop();
 
             } catch (err) {
-                console.error("Error starting audio:", err);
-                showError("Microphone access denied or not available. Please allow permissions.");
+                console.error(err);
+                showError("Could not access microphone. Please ensure you have granted permission.");
             }
         }
 
         function stopAudio() {
-            if (mediaStream) {
-                mediaStream.getTracks().forEach(track => track.stop());
-            }
-            if (audioCtx) {
-                audioCtx.close();
-            }
-            if (animationId) {
-                cancelAnimationFrame(animationId);
-            }
-            
-            // Clear canvas
-            canvasCtx.clearRect(0, 0, canvasWidth, canvasHeight);
+            if (mediaStream) mediaStream.getTracks().forEach(t => t.stop());
+            if (audioCtx) audioCtx.close();
+            if (animationId) cancelAnimationFrame(animationId);
             
             isRunning = false;
-            updateUIState(false);
+            updateUI(false);
+            
+            // Reset Gate UI
+            gateIndicator.className = "text-xs font-mono border border-slate-600 px-2 py-1 rounded bg-slate-900 text-slate-500";
+            gateIndicator.innerText = "GATE CLOSED";
         }
 
-        function updateUIState(active) {
-            if (active) {
-                // Button Styling
-                toggleBtn.classList.remove('bg-slate-700', 'hover:bg-slate-600');
-                toggleBtn.classList.add('bg-red-500', 'hover:bg-red-600', 'border-red-400');
-                btnText.innerText = "Stop Listening";
-                
-                // Icon Styling
-                btnIcon.className = "fa-solid fa-stop text-red-100";
-                document.getElementById('btn-icon').classList.add('bg-red-600');
-                document.getElementById('btn-icon').classList.remove('bg-slate-800');
-                
-                // Visualizer Overlay
-                statusOverlay.style.opacity = '0';
-                
-                // Add ring animation to container
-                toggleBtn.classList.add('active-ring');
+        // --- Processing Loop (Visuals + Noise Gate) ---
+        function processAudioLoop() {
+            if (!isRunning) return;
+            animationId = requestAnimationFrame(processAudioLoop);
 
+            const bufferLength = analyser.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+            analyser.getByteFrequencyData(dataArray);
+
+            // 1. Calculate Average Volume
+            let sum = 0;
+            for(let i = 0; i < bufferLength; i++) {
+                sum += dataArray[i];
+            }
+            const average = sum / bufferLength;
+            const normalizedVol = average / 255; // 0.0 to 1.0
+
+            // 2. Noise Gate Logic
+            // If volume > threshold, Open Gate. Else, Close Gate.
+            // Using setTargetAtTime for smooth envelope (no clicking)
+            if (normalizedVol > gateThreshold) {
+                // Open Gate (Allow sound)
+                if(!isGateOpen) {
+                    gateNode.gain.setTargetAtTime(1, audioCtx.currentTime, 0.01); // Fast attack
+                    isGateOpen = true;
+                    updateGateUI(true);
+                }
             } else {
-                // Button Styling
-                toggleBtn.classList.add('bg-slate-700', 'hover:bg-slate-600');
-                toggleBtn.classList.remove('bg-red-500', 'hover:bg-red-600', 'border-red-400', 'active-ring');
-                btnText.innerText = "Start Listening";
+                // Close Gate (Mute sound)
+                if(isGateOpen) {
+                    // Slight release time to not cut off words abruptly
+                    gateNode.gain.setTargetAtTime(0, audioCtx.currentTime, 0.2); 
+                    isGateOpen = false;
+                    updateGateUI(false);
+                }
+            }
 
-                // Icon Styling
-                btnIcon.className = "fa-solid fa-microphone text-slate-400";
-                document.getElementById('btn-icon').classList.remove('bg-red-600');
-                document.getElementById('btn-icon').classList.add('bg-slate-800');
+            // 3. Draw Visualizer
+            drawVisuals(dataArray, bufferLength);
+        }
 
-                // Visualizer Overlay
+        function drawVisuals(dataArray, bufferLength) {
+            canvasCtx.fillStyle = '#1e293b';
+            canvasCtx.fillRect(0, 0, canvasWidth, canvasHeight);
+
+            const barWidth = (canvasWidth / bufferLength) * 2.5;
+            let barHeight;
+            let x = 0;
+
+            for(let i = 0; i < bufferLength; i++) {
+                barHeight = (dataArray[i] / 255) * canvasHeight;
+
+                // Color based on Gate Status
+                if(isGateOpen) {
+                     canvasCtx.fillStyle = `rgb(${barHeight + 50}, 255, 100)`;
+                } else {
+                     canvasCtx.fillStyle = `rgb(100, 116, 139)`; // Slate-500 (muted)
+                }
+
+                canvasCtx.fillRect(x, canvasHeight - barHeight, barWidth, barHeight);
+                x += barWidth + 1;
+            }
+        }
+
+        // --- UI Helpers ---
+
+        function updateUI(active) {
+            if (active) {
+                toggleBtn.classList.replace('bg-blue-600', 'bg-red-600');
+                toggleBtn.classList.replace('hover:bg-blue-500', 'hover:bg-red-500');
+                toggleBtn.querySelector('i').className = "fa-solid fa-stop";
+                btnText.innerText = "Stop";
+                statusOverlay.style.opacity = '0';
+            } else {
+                toggleBtn.classList.replace('bg-red-600', 'bg-blue-600');
+                toggleBtn.classList.replace('hover:bg-red-500', 'hover:bg-blue-500');
+                toggleBtn.querySelector('i').className = "fa-solid fa-microphone";
+                btnText.innerText = "Start Echo";
                 statusOverlay.style.opacity = '1';
+                
+                // Clear Canvas
+                canvasCtx.clearRect(0,0, canvasWidth, canvasHeight);
+            }
+        }
+
+        function updateGateUI(isOpen) {
+            if(isOpen) {
+                gateIndicator.className = "text-xs font-mono border border-green-500/50 px-2 py-1 rounded bg-green-900/20 gate-open font-bold shadow-[0_0_10px_rgba(34,197,94,0.2)]";
+                gateIndicator.innerText = "TRANSMITTING";
+            } else {
+                gateIndicator.className = "text-xs font-mono border border-red-500/30 px-2 py-1 rounded bg-red-900/10 gate-active";
+                gateIndicator.innerText = "GATE CLOSED";
             }
         }
 
         function showError(msg) {
             errorMsg.innerText = msg;
             errorMsg.classList.remove('hidden');
-        }
-
-        // --- Visualizer Logic ---
-        function drawVisualizer() {
-            animationId = requestAnimationFrame(drawVisualizer);
-
-            const bufferLength = analyser.frequencyBinCount;
-            const dataArray = new Uint8Array(bufferLength);
-            
-            // Get time domain data (waveform)
-            analyser.getByteTimeDomainData(dataArray);
-
-            // Fill background slightly to create trail effect, or clear completely
-            canvasCtx.fillStyle = '#1e293b'; // Match container bg
-            canvasCtx.fillRect(0, 0, canvasWidth, canvasHeight);
-
-            canvasCtx.lineWidth = 2;
-            
-            // Create gradient for the wave
-            const gradient = canvasCtx.createLinearGradient(0, 0, canvasWidth, 0);
-            gradient.addColorStop(0, '#3b82f6');
-            gradient.addColorStop(0.5, '#8b5cf6');
-            gradient.addColorStop(1, '#3b82f6');
-            
-            canvasCtx.strokeStyle = gradient;
-            canvasCtx.beginPath();
-
-            const sliceWidth = canvasWidth * 1.0 / bufferLength;
-            let x = 0;
-
-            for (let i = 0; i < bufferLength; i++) {
-                const v = dataArray[i] / 128.0; // 128 is zero-point for 8-bit
-                const y = (v * canvasHeight) / 2;
-
-                if (i === 0) {
-                    canvasCtx.moveTo(x, y);
-                } else {
-                    canvasCtx.lineTo(x, y);
-                }
-
-                x += sliceWidth;
-            }
-
-            canvasCtx.lineTo(canvasWidth, canvasHeight / 2);
-            canvasCtx.stroke();
         }
     </script>
 </body>
