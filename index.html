@@ -1,355 +1,404 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { initializeApp } from 'firebase/app';
-import { 
-  getFirestore, 
-  doc, 
-  setDoc, 
-  onSnapshot, 
-  updateDoc, 
-  getDoc 
-} from 'firebase/firestore';
-import { 
-  getAuth, 
-  signInAnonymously, 
-  signInWithCustomToken, 
-  onAuthStateChanged 
-} from 'firebase/auth';
-import { 
-  Play, 
-  Pause, 
-  Users, 
-  Share2, 
-  Music, 
-  Upload, 
-  Activity,
-  CheckCircle2,
-  AlertCircle
-} from 'lucide-react';
-
-// --- Firebase Configuration ---
-const firebaseConfig = JSON.parse(__firebase_config);
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'sync-stream-v1';
-
-const App = () => {
-  const [user, setUser] = useState(null);
-  const [roomID, setRoomID] = useState(null);
-  const [isHost, setIsHost] = useState(false);
-  const [roomData, setRoomData] = useState(null);
-  const [audioFile, setAudioFile] = useState(null);
-  const [audioUrl, setAudioUrl] = useState(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const [syncStatus, setSyncStatus] = useState('Initializing...');
-  const [latency, setLatency] = useState(0);
-
-  const audioRef = useRef(null);
-  const syncInterval = useRef(null);
-
-  // --- Auth Setup ---
-  useEffect(() => {
-    const initAuth = async () => {
-      if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-        await signInWithCustomToken(auth, __initial_auth_token);
-      } else {
-        await signInAnonymously(auth);
-      }
-    };
-    initAuth();
-    const unsubscribe = onAuthStateChanged(auth, (u) => setUser(u));
-    return () => unsubscribe();
-  }, []);
-
-  // --- URL Management ---
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const r = params.get('room');
-    if (r) {
-      setRoomID(r);
-      setIsHost(false);
-    }
-  }, []);
-
-  // --- Room Synchronization Logic ---
-  useEffect(() => {
-    if (!user || !roomID) return;
-
-    const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomID);
-    
-    const unsubscribe = onSnapshot(roomRef, (snapshot) => {
-      if (snapshot.exists()) {
-        const data = snapshot.data();
-        setRoomData(data);
-        
-        // Follower Sync Logic
-        if (!isHost && audioRef.current && data.audioUrl) {
-          syncFollowerToHost(data);
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SyncStream - Multi-Device Audio Sync</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #020617;
+            color: #f8fafc;
+            overflow-x: hidden;
         }
-      } else if (isHost) {
-        // Create room if host and doesn't exist
-        initializeRoom();
-      }
-    }, (err) => console.error("Snapshot error:", err));
+        .glass {
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .progress-bar {
+            transition: width 0.1s linear;
+        }
+        .pulse-ring {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: .5; transform: scale(1.05); }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center p-4 md:p-8">
 
-    return () => unsubscribe();
-  }, [user, roomID, isHost]);
-
-  const initializeRoom = async () => {
-    const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomID);
-    await setDoc(roomRef, {
-      hostId: user.uid,
-      isPlaying: false,
-      lastPosition: 0,
-      lastUpdated: Date.now(),
-      audioUrl: null,
-      fileName: ""
-    });
-  };
-
-  const syncFollowerToHost = (data) => {
-    const audio = audioRef.current;
-    if (!audio || !data.lastUpdated) return;
-
-    // Calculate how much time has passed since the host last updated the state
-    const now = Date.now();
-    const timePassed = (now - data.lastUpdated) / 1000;
-    const expectedTime = data.isPlaying ? data.lastPosition + timePassed : data.lastPosition;
-    
-    const drift = Math.abs(audio.currentTime - expectedTime);
-
-    // Initial load or significant drift (> 0.2s)
-    if (drift > 0.2 || audio.paused !== !data.isPlaying) {
-      audio.currentTime = expectedTime;
-      if (data.isPlaying && audio.paused) {
-        audio.play().catch(e => setSyncStatus("Interaction needed to play"));
-      } else if (!data.isPlaying && !audio.paused) {
-        audio.pause();
-      }
-      setSyncStatus("Synced");
-    } else {
-      setSyncStatus("Fine-tuning...");
-    }
-  };
-
-  // --- Host Actions ---
-  const handleFileUpload = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    
-    setAudioFile(file);
-    const url = URL.createObjectURL(file);
-    setAudioUrl(url);
-
-    if (isHost && roomID) {
-      updateRoomState({ audioUrl: url, fileName: file.name, isPlaying: false, lastPosition: 0 });
-    }
-  };
-
-  const updateRoomState = async (updates) => {
-    if (!roomID || !isHost) return;
-    const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomID);
-    await updateDoc(roomRef, {
-      ...updates,
-      lastUpdated: Date.now()
-    });
-  };
-
-  const togglePlayback = () => {
-    const newPlaying = !isPlaying;
-    setIsPlaying(newPlaying);
-    
-    if (audioRef.current) {
-      if (newPlaying) audioRef.current.play();
-      else audioRef.current.pause();
-      
-      if (isHost) {
-        updateRoomState({ 
-          isPlaying: newPlaying, 
-          lastPosition: audioRef.current.currentTime 
-        });
-      }
-    }
-  };
-
-  // --- Utility ---
-  const createRoom = () => {
-    const id = Math.random().toString(36).substring(2, 8).toUpperCase();
-    setRoomID(id);
-    setIsHost(true);
-    window.history.pushState({}, '', `?room=${id}`);
-  };
-
-  const copyShareLink = () => {
-    const url = window.location.href;
-    document.execCommand('copy');
-    const input = document.createElement('input');
-    input.value = url;
-    document.body.appendChild(input);
-    input.select();
-    document.execCommand('copy');
-    document.body.removeChild(input);
-    // Simple feedback could be added here
-  };
-
-  // --- Audio Event Listeners ---
-  const onTimeUpdate = () => {
-    if (audioRef.current) {
-      setCurrentTime(audioRef.current.currentTime);
-      // Host periodically updates Firestore to keep everyone in check
-      if (isHost && Math.floor(audioRef.current.currentTime) % 5 === 0) {
-        updateRoomState({ lastPosition: audioRef.current.currentTime });
-      }
-    }
-  };
-
-  const onLoadedMetadata = () => {
-    if (audioRef.current) {
-      setDuration(audioRef.current.duration);
-    }
-  };
-
-  const formatTime = (time) => {
-    const mins = Math.floor(time / 60);
-    const secs = Math.floor(time % 60);
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans p-4 md:p-8 flex flex-col items-center">
-      {/* Header */}
-      <div className="w-full max-w-2xl flex justify-between items-center mb-12">
-        <div className="flex items-center gap-2">
-          <div className="bg-indigo-600 p-2 rounded-lg shadow-lg shadow-indigo-500/20">
-            <Music size={24} className="text-white" />
-          </div>
-          <h1 className="text-2xl font-bold tracking-tight">SyncStream</h1>
+    <!-- Header -->
+    <header class="w-full max-w-2xl flex justify-between items-center mb-12">
+        <div class="flex items-center gap-3">
+            <div class="bg-indigo-600 p-2.5 rounded-xl shadow-lg shadow-indigo-500/30">
+                <i data-lucide="music" class="text-white w-6 h-6"></i>
+            </div>
+            <h1 class="text-2xl font-bold tracking-tight">SyncStream</h1>
         </div>
         
-        {roomID && (
-          <div className="flex items-center gap-3 bg-slate-900 border border-slate-800 px-4 py-2 rounded-full">
-            <Users size={18} className="text-indigo-400" />
-            <span className="text-sm font-mono font-bold tracking-widest">{roomID}</span>
-            <button 
-              onClick={copyShareLink}
-              className="p-1.5 hover:bg-slate-800 rounded-full transition-colors"
-              title="Copy Link"
-            >
-              <Share2 size={16} />
+        <div id="room-badge" class="hidden flex items-center gap-3 glass px-4 py-2 rounded-full">
+            <i data-lucide="users" class="text-indigo-400 w-4 h-4"></i>
+            <span id="display-room-id" class="text-sm font-mono font-bold tracking-widest text-indigo-100"></span>
+            <button onclick="copyLink()" class="p-1.5 hover:bg-slate-800 rounded-full transition-colors">
+                <i data-lucide="share-2" class="w-4 h-4"></i>
             </button>
-          </div>
-        )}
-      </div>
+        </div>
+    </header>
 
-      {/* Main Content Area */}
-      <main className="w-full max-w-xl">
-        {!roomID ? (
-          <div className="bg-slate-900/50 border border-slate-800 p-8 rounded-3xl text-center backdrop-blur-sm">
-            <h2 className="text-3xl font-bold mb-4">Host a Session</h2>
-            <p className="text-slate-400 mb-8">Upload an MP3 and share the link to play music in perfect sync with your friends.</p>
-            <button 
-              onClick={createRoom}
-              className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 rounded-2xl font-bold text-lg shadow-xl shadow-indigo-600/20 transition-all active:scale-95"
-            >
-              Create New Room
+    <!-- App Container -->
+    <main id="app-container" class="w-full max-w-xl">
+        <!-- Home / Setup View -->
+        <div id="view-setup" class="glass p-8 rounded-[2.5rem] text-center shadow-2xl">
+            <div class="mb-8">
+                <div class="w-20 h-20 bg-indigo-600/10 rounded-3xl flex items-center justify-center mx-auto mb-6">
+                    <i data-lucide="radio" class="text-indigo-500 w-10 h-10"></i>
+                </div>
+                <h2 class="text-3xl font-bold mb-3">Sync Your Sound</h2>
+                <p class="text-slate-400">Host a room to play music perfectly in sync across multiple devices simultaneously.</p>
+            </div>
+            
+            <button onclick="createNewRoom()" class="w-full py-4 bg-indigo-600 hover:bg-indigo-500 rounded-2xl font-bold text-lg shadow-xl shadow-indigo-600/20 transition-all active:scale-95 mb-4">
+                Start Hosting
             </button>
-          </div>
-        ) : (
-          <div className="space-y-6">
-            {/* Audio Control Card */}
-            <div className="bg-slate-900 border border-slate-800 p-8 rounded-3xl shadow-2xl">
-              
-              {/* File Info */}
-              <div className="flex items-center gap-4 mb-8">
-                <div className="w-16 h-16 bg-slate-800 rounded-2xl flex items-center justify-center border border-slate-700">
-                  <Activity className={isPlaying ? "text-indigo-400 animate-pulse" : "text-slate-500"} />
-                </div>
-                <div>
-                  <h3 className="font-bold text-lg truncate max-w-[200px] md:max-w-xs">
-                    {roomData?.fileName || "Waiting for Music..."}
-                  </h3>
-                  <p className="text-slate-500 text-sm">
-                    {isHost ? "You are the Host" : "Listening to Stream"}
-                  </p>
-                </div>
-              </div>
+            <p class="text-xs text-slate-500">Or open a shared link on this device to join.</p>
+        </div>
 
-              {/* Progress Bar */}
-              <div className="space-y-2 mb-8">
-                <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-indigo-500 transition-all duration-300 ease-linear"
-                    style={{ width: `${(currentTime / (duration || 1)) * 100}%` }}
-                  ></div>
+        <!-- Player View -->
+        <div id="view-player" class="hidden space-y-6">
+            <div class="glass p-8 rounded-[2.5rem] shadow-2xl relative overflow-hidden">
+                <!-- Background Glow -->
+                <div class="absolute -top-24 -right-24 w-48 h-48 bg-indigo-600/10 blur-[100px] rounded-full"></div>
+                
+                <!-- Track Info -->
+                <div class="flex items-center gap-5 mb-10 relative">
+                    <div id="disc-container" class="w-20 h-20 bg-slate-800 rounded-2xl flex items-center justify-center border border-slate-700 shadow-inner">
+                        <i id="status-icon" data-lucide="disc" class="text-slate-500 w-8 h-8"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <h3 id="track-name" class="font-bold text-xl truncate">Waiting for Audio...</h3>
+                        <p id="user-role" class="text-slate-500 text-sm font-medium uppercase tracking-wider"></p>
+                    </div>
                 </div>
-                <div className="flex justify-between text-xs font-mono text-slate-500">
-                  <span>{formatTime(currentTime)}</span>
-                  <span>{formatTime(duration)}</span>
+
+                <!-- Progress Section -->
+                <div class="space-y-3 mb-10">
+                    <div class="relative h-2 w-full bg-slate-800 rounded-full overflow-hidden cursor-pointer group" onclick="handleSeek(event)">
+                        <div id="progress-bar" class="absolute h-full bg-indigo-500 rounded-full shadow-[0_0_15px_rgba(99,102,241,0.5)]"></div>
+                    </div>
+                    <div class="flex justify-between text-xs font-mono font-medium text-slate-500">
+                        <span id="time-current">0:00</span>
+                        <span id="time-total">0:00</span>
+                    </div>
                 </div>
-              </div>
 
-              {/* Controls */}
-              <div className="flex items-center justify-center gap-8">
-                {isHost && (
-                  <label className="p-4 bg-slate-800 hover:bg-slate-700 rounded-2xl cursor-pointer transition-colors">
-                    <Upload size={24} />
-                    <input type="file" className="hidden" accept="audio/*" onChange={handleFileUpload} />
-                  </label>
-                )}
+                <!-- Main Controls -->
+                <div class="flex items-center justify-center gap-10">
+                    <div id="host-controls" class="hidden">
+                        <label class="w-14 h-14 bg-slate-800 hover:bg-slate-700 rounded-2xl cursor-pointer flex items-center justify-center transition-all hover:scale-105 active:scale-95 border border-slate-700">
+                            <i data-lucide="upload" class="w-6 h-6"></i>
+                            <input type="file" id="file-input" class="hidden" accept="audio/*">
+                        </label>
+                    </div>
 
-                <button 
-                  onClick={togglePlayback}
-                  disabled={!audioUrl && !roomData?.audioUrl}
-                  className="w-20 h-20 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed rounded-full flex items-center justify-center shadow-xl shadow-indigo-600/30 transition-all active:scale-90"
-                >
-                  {isPlaying ? <Pause size={36} fill="white" /> : <Play size={36} fill="white" className="ml-1" />}
-                </button>
+                    <button id="btn-toggle" class="w-24 h-24 bg-indigo-600 hover:bg-indigo-500 rounded-full flex items-center justify-center shadow-2xl shadow-indigo-600/40 transition-all hover:scale-105 active:scale-90 border-4 border-slate-900">
+                        <i id="play-icon" data-lucide="play" class="w-10 h-10 fill-white ml-1"></i>
+                    </button>
 
-                <div className="p-4 opacity-0 pointer-events-none">
-                  <Activity size={24} />
+                    <div class="w-14 h-14 opacity-0 pointer-events-none"></div>
                 </div>
-              </div>
             </div>
 
-            {/* Sync Status Banner */}
-            <div className={`flex items-center gap-3 px-6 py-3 rounded-2xl border ${
-              syncStatus === 'Synced' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-amber-500/10 border-amber-500/20 text-amber-400'
-            }`}>
-              {syncStatus === 'Synced' ? <CheckCircle2 size={18} /> : <AlertCircle size={18} className="animate-spin" />}
-              <span className="text-sm font-medium">{syncStatus}</span>
-              <div className="ml-auto text-[10px] font-mono opacity-50 uppercase tracking-tighter">
-                LATENCY COMPENSATED
-              </div>
+            <!-- Status Banner -->
+            <div id="sync-banner" class="flex items-center gap-3 px-6 py-4 rounded-2xl glass border-slate-800/50">
+                <div id="sync-dot" class="w-2 h-2 rounded-full bg-slate-500"></div>
+                <span id="sync-text" class="text-sm font-semibold text-slate-400 italic">Initializing synchronization...</span>
             </div>
+        </div>
+    </main>
 
-            {/* Hidden Audio Element */}
-            <audio 
-              ref={audioRef}
-              src={isHost ? audioUrl : roomData?.audioUrl}
-              onTimeUpdate={onTimeUpdate}
-              onLoadedMetadata={onLoadedMetadata}
-              className="hidden"
-            />
+    <!-- Footer -->
+    <footer class="mt-auto py-8 text-slate-600 text-[10px] text-center max-w-xs space-y-2 uppercase tracking-[0.2em]">
+        <p>Ultra-Low Latency Protocol v2.5</p>
+        <p class="normal-case tracking-normal opacity-50">Note: Browser policies require manual interaction (Play) once to enable audio.</p>
+    </footer>
 
-            {!isHost && !roomData?.audioUrl && (
-              <div className="p-6 bg-slate-900/50 border border-slate-800 rounded-2xl text-center">
-                <p className="text-slate-400">Waiting for host to upload music...</p>
-              </div>
-            )}
-          </div>
-        )}
-      </main>
+    <audio id="audio-element" class="hidden"></audio>
 
-      {/* Footer Instructions */}
-      <footer className="mt-auto pt-12 text-slate-600 text-xs text-center max-w-md">
-        <p className="mb-2 uppercase tracking-[0.2em]">Sync Protocol v2.5</p>
-        <p>Browsers often block auto-playback. If audio doesn't start, please tap the Play button manually to allow the audio context to initialize.</p>
-      </footer>
-    </div>
-  );
-};
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot, updateDoc, getDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-export default App;
+        // --- Configuration & Initialization ---
+        const firebaseConfig = JSON.parse(__firebase_config);
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-sync-app';
+
+        // State variables
+        let currentUser = null;
+        let isHost = false;
+        let roomID = null;
+        let currentRoomData = null;
+        let driftAdjustment = 0; // Local time vs Server time offset
+
+        // UI Elements
+        const audio = document.getElementById('audio-element');
+        const viewSetup = document.getElementById('view-setup');
+        const viewPlayer = document.getElementById('view-player');
+        const trackNameEl = document.getElementById('track-name');
+        const userRoleEl = document.getElementById('user-role');
+        const playIcon = document.getElementById('play-icon');
+        const progressBar = document.getElementById('progress-bar');
+        const timeCurrent = document.getElementById('time-current');
+        const timeTotal = document.getElementById('time-total');
+        const syncText = document.getElementById('sync-text');
+        const syncDot = document.getElementById('sync-dot');
+
+        // --- Core Functions ---
+
+        async function init() {
+            lucide.createIcons();
+            
+            // 1. Auth
+            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                await signInWithCustomToken(auth, __initial_auth_token);
+            } else {
+                await signInAnonymously(auth);
+            }
+
+            onAuthStateChanged(auth, (user) => {
+                currentUser = user;
+                checkUrlForRoom();
+            });
+
+            // 2. Event Listeners
+            document.getElementById('btn-toggle').addEventListener('click', togglePlayback);
+            document.getElementById('file-input').addEventListener('change', handleFileSelect);
+            
+            audio.ontimeupdate = updateUIProgress;
+            audio.onloadedmetadata = () => {
+                timeTotal.innerText = formatTime(audio.duration);
+            };
+        }
+
+        function checkUrlForRoom() {
+            const params = new URLSearchParams(window.location.search);
+            const r = params.get('room');
+            if (r) {
+                joinRoom(r);
+            }
+        }
+
+        async function createNewRoom() {
+            const id = Math.random().toString(36).substring(2, 8).toUpperCase();
+            isHost = true;
+            roomID = id;
+            
+            const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomID);
+            await setDoc(roomRef, {
+                hostId: currentUser.uid,
+                isPlaying: false,
+                lastPosition: 0,
+                lastUpdated: Date.now(),
+                fileName: "No file selected",
+                updatedAt: serverTimestamp()
+            });
+
+            window.history.pushState({}, '', `?room=${id}`);
+            startRoomListener();
+            setupPlayerUI();
+        }
+
+        function joinRoom(id) {
+            roomID = id;
+            isHost = false;
+            startRoomListener();
+            setupPlayerUI();
+        }
+
+        function startRoomListener() {
+            const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomID);
+            onSnapshot(roomRef, (snapshot) => {
+                if (snapshot.exists()) {
+                    const data = snapshot.data();
+                    currentRoomData = data;
+                    syncToState(data);
+                }
+            }, (err) => {
+                console.error("Room sync error", err);
+                updateSyncUI("Connection lost", "bg-red-500");
+            });
+        }
+
+        function syncToState(data) {
+            trackNameEl.innerText = data.fileName || "Ready to Stream";
+            
+            if (!isHost) {
+                // Precise Sync Logic
+                const now = Date.now();
+                const timeSinceUpdate = (now - data.lastUpdated) / 1000;
+                const targetTime = data.isPlaying ? data.lastPosition + timeSinceUpdate : data.lastPosition;
+                
+                const currentDrift = Math.abs(audio.currentTime - targetTime);
+
+                // Critical correction logic
+                if (currentDrift > 0.15 || audio.paused === data.isPlaying) {
+                    audio.currentTime = targetTime;
+                    if (data.isPlaying && audio.paused) {
+                        audio.play().catch(() => updateSyncUI("Tap Play to Sync", "bg-amber-500"));
+                    } else if (!data.isPlaying && !audio.paused) {
+                        audio.pause();
+                    }
+                    updateSyncUI("Perfectly Synced", "bg-emerald-500");
+                }
+            }
+            
+            updatePlayIcon(data.isPlaying);
+        }
+
+        async function togglePlayback() {
+            // Browsers require interaction to start audio context
+            if (audio.paused && !currentRoomData?.isPlaying && !isHost) {
+                // Interaction dummy play
+                audio.play().then(() => audio.pause()).catch(() => {});
+            }
+
+            if (!isHost) return; // Only host controls the master clock
+
+            const newState = !audio.paused; // If currently playing, we want to pause
+            if (audio.paused) {
+                audio.play();
+            } else {
+                audio.pause();
+            }
+
+            const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomID);
+            await updateDoc(roomRef, {
+                isPlaying: !newState,
+                lastPosition: audio.currentTime,
+                lastUpdated: Date.now()
+            });
+        }
+
+        function handleFileSelect(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const url = URL.createObjectURL(file);
+            audio.src = url;
+            trackNameEl.innerText = file.name;
+
+            if (isHost) {
+                const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomID);
+                updateDoc(roomRef, {
+                    fileName: file.name,
+                    lastPosition: 0,
+                    isPlaying: false,
+                    lastUpdated: Date.now()
+                });
+            }
+        }
+
+        function handleSeek(e) {
+            if (!isHost) return;
+            const rect = e.currentTarget.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const pct = x / rect.width;
+            const targetTime = pct * audio.duration;
+            
+            audio.currentTime = targetTime;
+            const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomID);
+            updateDoc(roomRef, {
+                lastPosition: targetTime,
+                lastUpdated: Date.now()
+            });
+        }
+
+        // --- UI Utilities ---
+
+        function setupPlayerUI() {
+            viewSetup.classList.add('hidden');
+            viewPlayer.classList.remove('hidden');
+            document.getElementById('room-badge').classList.remove('hidden');
+            document.getElementById('display-room-id').innerText = roomID;
+            userRoleEl.innerText = isHost ? "Master Controller" : "Synchronized Listener";
+            
+            if (isHost) {
+                document.getElementById('host-controls').classList.remove('hidden');
+            }
+            lucide.createIcons();
+        }
+
+        function updateUIProgress() {
+            const pct = (audio.currentTime / (audio.duration || 1)) * 100;
+            progressBar.style.width = `${pct}%`;
+            timeCurrent.innerText = formatTime(audio.currentTime);
+            
+            // Host sends periodic heartbeat to prevent long-term drift
+            if (isHost && Math.floor(audio.currentTime) % 10 === 0 && !audio.paused) {
+                 const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomID);
+                 updateDoc(roomRef, { 
+                    lastPosition: audio.currentTime,
+                    lastUpdated: Date.now()
+                 });
+            }
+        }
+
+        function updatePlayIcon(playing) {
+            playIcon.setAttribute('data-lucide', playing ? 'pause' : 'play');
+            if (playing) {
+                playIcon.classList.remove('ml-1');
+                document.getElementById('disc-container').classList.add('pulse-ring', 'border-indigo-500/50');
+            } else {
+                playIcon.classList.add('ml-1');
+                document.getElementById('disc-container').classList.remove('pulse-ring', 'border-indigo-500/50');
+            }
+            lucide.createIcons();
+        }
+
+        function updateSyncUI(text, colorClass) {
+            syncText.innerText = text;
+            syncDot.className = `w-2 h-2 rounded-full ${colorClass}`;
+        }
+
+        function formatTime(seconds) {
+            if (isNaN(seconds)) return "0:00";
+            const m = Math.floor(seconds / 60);
+            const s = Math.floor(seconds % 60);
+            return `${m}:${s.toString().padStart(2, '0')}`;
+        }
+
+        window.copyLink = function() {
+            const url = window.location.href;
+            const el = document.createElement('textarea');
+            el.value = url;
+            document.body.appendChild(el);
+            el.select();
+            document.execCommand('copy');
+            document.body.removeChild(el);
+            
+            const btn = document.querySelector('[onclick="copyLink()"]');
+            const original = btn.innerHTML;
+            btn.innerHTML = '<i data-lucide="check" class="w-4 h-4 text-emerald-500"></i>';
+            lucide.createIcons();
+            setTimeout(() => {
+                btn.innerHTML = original;
+                lucide.createIcons();
+            }, 2000);
+        };
+
+        // Initialize on load
+        window.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
 
