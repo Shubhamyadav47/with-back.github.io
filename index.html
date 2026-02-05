@@ -19,9 +19,6 @@
             backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
-        .progress-bar {
-            transition: width 0.1s linear;
-        }
         .pulse-ring {
             animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
         }
@@ -45,7 +42,7 @@
         <div id="room-badge" class="hidden flex items-center gap-3 glass px-4 py-2 rounded-full">
             <i data-lucide="users" class="text-indigo-400 w-4 h-4"></i>
             <span id="display-room-id" class="text-sm font-mono font-bold tracking-widest text-indigo-100"></span>
-            <button onclick="copyLink()" class="p-1.5 hover:bg-slate-800 rounded-full transition-colors">
+            <button onclick="window.copyLink()" class="p-1.5 hover:bg-slate-800 rounded-full transition-colors">
                 <i data-lucide="share-2" class="w-4 h-4"></i>
             </button>
         </div>
@@ -53,43 +50,40 @@
 
     <!-- App Container -->
     <main id="app-container" class="w-full max-w-xl">
-        <!-- Home / Setup View -->
+        <!-- Setup View -->
         <div id="view-setup" class="glass p-8 rounded-[2.5rem] text-center shadow-2xl">
             <div class="mb-8">
                 <div class="w-20 h-20 bg-indigo-600/10 rounded-3xl flex items-center justify-center mx-auto mb-6">
                     <i data-lucide="radio" class="text-indigo-500 w-10 h-10"></i>
                 </div>
                 <h2 class="text-3xl font-bold mb-3">Sync Your Sound</h2>
-                <p class="text-slate-400">Host a room to play music perfectly in sync across multiple devices simultaneously.</p>
+                <p class="text-slate-400">Host a room to play music perfectly in sync across multiple devices.</p>
             </div>
             
-            <button onclick="createNewRoom()" class="w-full py-4 bg-indigo-600 hover:bg-indigo-500 rounded-2xl font-bold text-lg shadow-xl shadow-indigo-600/20 transition-all active:scale-95 mb-4">
+            <button id="btn-host" onclick="window.createNewRoom()" class="w-full py-4 bg-indigo-600 hover:bg-indigo-500 rounded-2xl font-bold text-lg shadow-xl shadow-indigo-600/20 transition-all active:scale-95 mb-4 disabled:opacity-50 disabled:cursor-wait">
                 Start Hosting
             </button>
-            <p class="text-xs text-slate-500">Or open a shared link on this device to join.</p>
+            <p id="setup-status" class="text-xs text-slate-500">Initializing secure connection...</p>
         </div>
 
         <!-- Player View -->
         <div id="view-player" class="hidden space-y-6">
             <div class="glass p-8 rounded-[2.5rem] shadow-2xl relative overflow-hidden">
-                <!-- Background Glow -->
                 <div class="absolute -top-24 -right-24 w-48 h-48 bg-indigo-600/10 blur-[100px] rounded-full"></div>
                 
-                <!-- Track Info -->
                 <div class="flex items-center gap-5 mb-10 relative">
                     <div id="disc-container" class="w-20 h-20 bg-slate-800 rounded-2xl flex items-center justify-center border border-slate-700 shadow-inner">
                         <i id="status-icon" data-lucide="disc" class="text-slate-500 w-8 h-8"></i>
                     </div>
                     <div class="flex-1 min-w-0">
-                        <h3 id="track-name" class="font-bold text-xl truncate">Waiting for Audio...</h3>
+                        <h3 id="track-name" class="font-bold text-xl truncate">No track loaded</h3>
                         <p id="user-role" class="text-slate-500 text-sm font-medium uppercase tracking-wider"></p>
                     </div>
                 </div>
 
-                <!-- Progress Section -->
                 <div class="space-y-3 mb-10">
-                    <div class="relative h-2 w-full bg-slate-800 rounded-full overflow-hidden cursor-pointer group" onclick="handleSeek(event)">
-                        <div id="progress-bar" class="absolute h-full bg-indigo-500 rounded-full shadow-[0_0_15px_rgba(99,102,241,0.5)]"></div>
+                    <div class="relative h-2 w-full bg-slate-800 rounded-full overflow-hidden cursor-pointer" onclick="window.handleSeek(event)">
+                        <div id="progress-bar" class="absolute h-full bg-indigo-500 rounded-full shadow-[0_0_15px_rgba(99,102,241,0.5)] w-0"></div>
                     </div>
                     <div class="flex justify-between text-xs font-mono font-medium text-slate-500">
                         <span id="time-current">0:00</span>
@@ -97,108 +91,91 @@
                     </div>
                 </div>
 
-                <!-- Main Controls -->
                 <div class="flex items-center justify-center gap-10">
                     <div id="host-controls" class="hidden">
                         <label class="w-14 h-14 bg-slate-800 hover:bg-slate-700 rounded-2xl cursor-pointer flex items-center justify-center transition-all hover:scale-105 active:scale-95 border border-slate-700">
                             <i data-lucide="upload" class="w-6 h-6"></i>
-                            <input type="file" id="file-input" class="hidden" accept="audio/*">
+                            <input type="file" id="file-input" class="hidden" accept="audio/*" onchange="window.handleFileSelect(event)">
                         </label>
                     </div>
 
-                    <button id="btn-toggle" class="w-24 h-24 bg-indigo-600 hover:bg-indigo-500 rounded-full flex items-center justify-center shadow-2xl shadow-indigo-600/40 transition-all hover:scale-105 active:scale-90 border-4 border-slate-900">
+                    <button id="btn-toggle" onclick="window.togglePlayback()" class="w-24 h-24 bg-indigo-600 hover:bg-indigo-500 rounded-full flex items-center justify-center shadow-2xl shadow-indigo-600/40 transition-all hover:scale-105 active:scale-90 border-4 border-slate-900">
                         <i id="play-icon" data-lucide="play" class="w-10 h-10 fill-white ml-1"></i>
                     </button>
-
-                    <div class="w-14 h-14 opacity-0 pointer-events-none"></div>
+                    
+                    <div class="w-14 h-14"></div>
                 </div>
             </div>
 
-            <!-- Status Banner -->
             <div id="sync-banner" class="flex items-center gap-3 px-6 py-4 rounded-2xl glass border-slate-800/50">
                 <div id="sync-dot" class="w-2 h-2 rounded-full bg-slate-500"></div>
-                <span id="sync-text" class="text-sm font-semibold text-slate-400 italic">Initializing synchronization...</span>
+                <span id="sync-text" class="text-sm font-semibold text-slate-400 italic">Connecting to room...</span>
             </div>
         </div>
     </main>
 
-    <!-- Footer -->
     <footer class="mt-auto py-8 text-slate-600 text-[10px] text-center max-w-xs space-y-2 uppercase tracking-[0.2em]">
-        <p>Ultra-Low Latency Protocol v2.5</p>
-        <p class="normal-case tracking-normal opacity-50">Note: Browser policies require manual interaction (Play) once to enable audio.</p>
+        <p>Ultra-Low Latency Protocol v2.6</p>
+        <p class="normal-case tracking-normal opacity-50">Browser Tip: Tap Play once to enable audio output on this device.</p>
     </footer>
 
     <audio id="audio-element" class="hidden"></audio>
 
-    <!-- Firebase SDKs -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, onSnapshot, updateDoc, getDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, onSnapshot, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // --- Configuration & Initialization ---
+        // Firebase Setup
         const firebaseConfig = JSON.parse(__firebase_config);
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-sync-app';
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'sync-stream-app';
 
-        // State variables
+        // State
         let currentUser = null;
         let isHost = false;
         let roomID = null;
         let currentRoomData = null;
-        let driftAdjustment = 0; // Local time vs Server time offset
 
-        // UI Elements
         const audio = document.getElementById('audio-element');
-        const viewSetup = document.getElementById('view-setup');
-        const viewPlayer = document.getElementById('view-player');
-        const trackNameEl = document.getElementById('track-name');
-        const userRoleEl = document.getElementById('user-role');
-        const playIcon = document.getElementById('play-icon');
-        const progressBar = document.getElementById('progress-bar');
-        const timeCurrent = document.getElementById('time-current');
-        const timeTotal = document.getElementById('time-total');
-        const syncText = document.getElementById('sync-text');
-        const syncDot = document.getElementById('sync-dot');
+        const setupStatus = document.getElementById('setup-status');
+        const btnHost = document.getElementById('btn-host');
 
-        // --- Core Functions ---
-
+        // Initializer
         async function init() {
             lucide.createIcons();
             
-            // 1. Auth
-            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                await signInWithCustomToken(auth, __initial_auth_token);
-            } else {
-                await signInAnonymously(auth);
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (err) {
+                setupStatus.innerText = "Connection failed. Please refresh.";
+                return;
             }
 
             onAuthStateChanged(auth, (user) => {
-                currentUser = user;
-                checkUrlForRoom();
+                if (user) {
+                    currentUser = user;
+                    btnHost.disabled = false;
+                    setupStatus.innerText = "Connection secure. Ready to host.";
+                    
+                    // Check if joining via URL
+                    const params = new URLSearchParams(window.location.search);
+                    const r = params.get('room');
+                    if (r) joinRoom(r);
+                }
             });
+        }
 
-            // 2. Event Listeners
-            document.getElementById('btn-toggle').addEventListener('click', togglePlayback);
-            document.getElementById('file-input').addEventListener('change', handleFileSelect);
+        // Global functions (Attached to window for HTML access)
+        window.createNewRoom = async () => {
+            if (!currentUser) return;
             
-            audio.ontimeupdate = updateUIProgress;
-            audio.onloadedmetadata = () => {
-                timeTotal.innerText = formatTime(audio.duration);
-            };
-        }
-
-        function checkUrlForRoom() {
-            const params = new URLSearchParams(window.location.search);
-            const r = params.get('room');
-            if (r) {
-                joinRoom(r);
-            }
-        }
-
-        async function createNewRoom() {
             const id = Math.random().toString(36).substring(2, 8).toUpperCase();
             isHost = true;
             roomID = id;
@@ -209,21 +186,21 @@
                 isPlaying: false,
                 lastPosition: 0,
                 lastUpdated: Date.now(),
-                fileName: "No file selected",
+                fileName: "Waiting for host...",
                 updatedAt: serverTimestamp()
             });
 
             window.history.pushState({}, '', `?room=${id}`);
             startRoomListener();
             setupPlayerUI();
-        }
+        };
 
-        function joinRoom(id) {
+        window.joinRoom = (id) => {
             roomID = id;
             isHost = false;
             startRoomListener();
             setupPlayerUI();
-        }
+        };
 
         function startRoomListener() {
             const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomID);
@@ -234,24 +211,21 @@
                     syncToState(data);
                 }
             }, (err) => {
-                console.error("Room sync error", err);
                 updateSyncUI("Connection lost", "bg-red-500");
             });
         }
 
         function syncToState(data) {
-            trackNameEl.innerText = data.fileName || "Ready to Stream";
+            document.getElementById('track-name').innerText = data.fileName || "Ready to Stream";
             
             if (!isHost) {
-                // Precise Sync Logic
                 const now = Date.now();
                 const timeSinceUpdate = (now - data.lastUpdated) / 1000;
                 const targetTime = data.isPlaying ? data.lastPosition + timeSinceUpdate : data.lastPosition;
                 
-                const currentDrift = Math.abs(audio.currentTime - targetTime);
+                const drift = Math.abs(audio.currentTime - targetTime);
 
-                // Critical correction logic
-                if (currentDrift > 0.15 || audio.paused === data.isPlaying) {
+                if (drift > 0.15 || audio.paused === data.isPlaying) {
                     audio.currentTime = targetTime;
                     if (data.isPlaying && audio.paused) {
                         audio.play().catch(() => updateSyncUI("Tap Play to Sync", "bg-amber-500"));
@@ -261,41 +235,35 @@
                     updateSyncUI("Perfectly Synced", "bg-emerald-500");
                 }
             }
-            
             updatePlayIcon(data.isPlaying);
         }
 
-        async function togglePlayback() {
-            // Browsers require interaction to start audio context
+        window.togglePlayback = async () => {
+            // Needed to unlock audio on mobile/browsers
             if (audio.paused && !currentRoomData?.isPlaying && !isHost) {
-                // Interaction dummy play
-                audio.play().then(() => audio.pause()).catch(() => {});
+                try { await audio.play(); audio.pause(); } catch(e) {}
             }
 
-            if (!isHost) return; // Only host controls the master clock
+            if (!isHost) return;
 
-            const newState = !audio.paused; // If currently playing, we want to pause
-            if (audio.paused) {
-                audio.play();
-            } else {
-                audio.pause();
-            }
+            const willPlay = audio.paused;
+            if (willPlay) audio.play(); else audio.pause();
 
             const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomID);
             await updateDoc(roomRef, {
-                isPlaying: !newState,
+                isPlaying: willPlay,
                 lastPosition: audio.currentTime,
                 lastUpdated: Date.now()
             });
-        }
+        };
 
-        function handleFileSelect(e) {
+        window.handleFileSelect = (e) => {
             const file = e.target.files[0];
             if (!file) return;
 
             const url = URL.createObjectURL(file);
             audio.src = url;
-            trackNameEl.innerText = file.name;
+            document.getElementById('track-name').innerText = file.name;
 
             if (isHost) {
                 const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomID);
@@ -306,68 +274,63 @@
                     lastUpdated: Date.now()
                 });
             }
-        }
+        };
 
-        function handleSeek(e) {
+        window.handleSeek = (e) => {
             if (!isHost) return;
             const rect = e.currentTarget.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const pct = x / rect.width;
-            const targetTime = pct * audio.duration;
+            const pct = (e.clientX - rect.left) / rect.width;
+            const target = pct * audio.duration;
             
-            audio.currentTime = targetTime;
+            audio.currentTime = target;
             const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomID);
             updateDoc(roomRef, {
-                lastPosition: targetTime,
+                lastPosition: target,
                 lastUpdated: Date.now()
             });
-        }
-
-        // --- UI Utilities ---
+        };
 
         function setupPlayerUI() {
-            viewSetup.classList.add('hidden');
-            viewPlayer.classList.remove('hidden');
+            document.getElementById('view-setup').classList.add('hidden');
+            document.getElementById('view-player').classList.remove('hidden');
             document.getElementById('room-badge').classList.remove('hidden');
             document.getElementById('display-room-id').innerText = roomID;
-            userRoleEl.innerText = isHost ? "Master Controller" : "Synchronized Listener";
+            document.getElementById('user-role').innerText = isHost ? "Master Controller" : "Synchronized Listener";
             
-            if (isHost) {
-                document.getElementById('host-controls').classList.remove('hidden');
-            }
+            if (isHost) document.getElementById('host-controls').classList.remove('hidden');
             lucide.createIcons();
         }
 
         function updateUIProgress() {
             const pct = (audio.currentTime / (audio.duration || 1)) * 100;
-            progressBar.style.width = `${pct}%`;
-            timeCurrent.innerText = formatTime(audio.currentTime);
+            document.getElementById('progress-bar').style.width = `${pct}%`;
+            document.getElementById('time-current').innerText = formatTime(audio.currentTime);
             
-            // Host sends periodic heartbeat to prevent long-term drift
             if (isHost && Math.floor(audio.currentTime) % 10 === 0 && !audio.paused) {
-                 const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomID);
-                 updateDoc(roomRef, { 
+                const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomID);
+                updateDoc(roomRef, { 
                     lastPosition: audio.currentTime,
                     lastUpdated: Date.now()
-                 });
+                });
             }
         }
 
         function updatePlayIcon(playing) {
-            playIcon.setAttribute('data-lucide', playing ? 'pause' : 'play');
+            const icon = document.getElementById('play-icon');
+            icon.setAttribute('data-lucide', playing ? 'pause' : 'play');
             if (playing) {
-                playIcon.classList.remove('ml-1');
+                icon.classList.remove('ml-1');
                 document.getElementById('disc-container').classList.add('pulse-ring', 'border-indigo-500/50');
             } else {
-                playIcon.classList.add('ml-1');
+                icon.classList.add('ml-1');
                 document.getElementById('disc-container').classList.remove('pulse-ring', 'border-indigo-500/50');
             }
             lucide.createIcons();
         }
 
         function updateSyncUI(text, colorClass) {
-            syncText.innerText = text;
-            syncDot.className = `w-2 h-2 rounded-full ${colorClass}`;
+            document.getElementById('sync-text').innerText = text;
+            document.getElementById('sync-dot').className = `w-2 h-2 rounded-full ${colorClass}`;
         }
 
         function formatTime(seconds) {
@@ -377,27 +340,28 @@
             return `${m}:${s.toString().padStart(2, '0')}`;
         }
 
-        window.copyLink = function() {
+        window.copyLink = () => {
             const url = window.location.href;
-            const el = document.createElement('textarea');
-            el.value = url;
-            document.body.appendChild(el);
-            el.select();
+            const temp = document.createElement('input');
+            document.body.appendChild(temp);
+            temp.value = url;
+            temp.select();
             document.execCommand('copy');
-            document.body.removeChild(el);
+            document.body.removeChild(temp);
             
-            const btn = document.querySelector('[onclick="copyLink()"]');
+            const btn = document.querySelector('[onclick="window.copyLink()"]');
             const original = btn.innerHTML;
             btn.innerHTML = '<i data-lucide="check" class="w-4 h-4 text-emerald-500"></i>';
             lucide.createIcons();
-            setTimeout(() => {
-                btn.innerHTML = original;
-                lucide.createIcons();
-            }, 2000);
+            setTimeout(() => { btn.innerHTML = original; lucide.createIcons(); }, 2000);
         };
 
-        // Initialize on load
-        window.addEventListener('DOMContentLoaded', init);
+        audio.ontimeupdate = updateUIProgress;
+        audio.onloadedmetadata = () => {
+            document.getElementById('time-total').innerText = formatTime(audio.duration);
+        };
+
+        init();
     </script>
 </body>
 </html>
