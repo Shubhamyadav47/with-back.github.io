@@ -31,7 +31,8 @@ h1 {
     text-align: center;
 }
 
-input[type="text"] {
+input[type="text"],
+textarea {
     width: 100%;
     padding: 12px;
     border-radius: 8px;
@@ -41,14 +42,8 @@ input[type="text"] {
 }
 
 textarea {
-    width: 100%;
     height: 150px;
-    padding: 12px;
-    border-radius: 8px;
-    border: 1px solid #ddd;
     resize: vertical;
-    font-size: 14px;
-    margin-top: 15px;
 }
 
 .buttons {
@@ -95,11 +90,15 @@ button:hover {
 <div class="container">
     <h1>HTML Photo Gallery Generator</h1>
 
-    <!-- Gallery Title Input -->
-    <input type="text" id="galleryTitle" placeholder="Enter Gallery Title (Example: Wedding Album)" value="Photo Gallery">
+    <!-- Gallery Title -->
+    <input type="text" id="galleryTitle"
+        placeholder="Enter Gallery Title"
+        value="Photo Gallery">
 
-    <!-- Image List Input -->
-    <textarea id="imageList" placeholder="Enter image names (comma separated or one per line)
+    <!-- Image List -->
+    <textarea id="imageList"
+        placeholder="Enter image names (comma separated or one per line)
+
 Example:
 photo1.jpg
 wedding2.jpg
@@ -111,7 +110,7 @@ img003.jpg"></textarea>
     </div>
 
     <div class="footer-note">
-        This will create a fully standalone HTML gallery file.
+        Generates a fully standalone HTML gallery file.
     </div>
 </div>
 
@@ -121,20 +120,26 @@ let generatedHTML = "";
 /* ====== Generate Gallery File ====== */
 function generateGallery() {
     const titleInput = document.getElementById("galleryTitle").value.trim();
-    const input = document.getElementById("imageList").value;
+    const rawInput = document.getElementById("imageList").value;
 
-    if (!input.trim()) {
+    if (!rawInput.trim()) {
         alert("Please enter at least one image name.");
         return;
     }
 
     const galleryTitle = titleInput || "Photo Gallery";
 
-    // Split by comma or new line
-    const images = input
-        .split(/[\n,]+/)
-        .map(name => name.trim())
-        .filter(name => name !== "");
+    /* FIXED STRONG PARSER */
+    const images = rawInput
+        .replace(/\r/g, "")           // Remove Windows line breaks
+        .split(/[\n,]+/)              // Split by comma OR newline
+        .map(name => name.trim())     // Remove leading & trailing spaces
+        .filter(name => name.length > 0); // Remove empty values
+
+    if (images.length === 0) {
+        alert("No valid image names found.");
+        return;
+    }
 
     let imageTags = images.map(name => `
         <div class="gallery-item">
