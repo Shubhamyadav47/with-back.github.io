@@ -31,6 +31,15 @@ h1 {
     text-align: center;
 }
 
+input[type="text"] {
+    width: 100%;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    font-size: 14px;
+    margin-top: 15px;
+}
+
 textarea {
     width: 100%;
     height: 150px;
@@ -86,6 +95,10 @@ button:hover {
 <div class="container">
     <h1>HTML Photo Gallery Generator</h1>
 
+    <!-- Gallery Title Input -->
+    <input type="text" id="galleryTitle" placeholder="Enter Gallery Title (Example: Wedding Album)" value="Photo Gallery">
+
+    <!-- Image List Input -->
     <textarea id="imageList" placeholder="Enter image names (comma separated or one per line)
 Example:
 photo1.jpg
@@ -107,12 +120,15 @@ let generatedHTML = "";
 
 /* ====== Generate Gallery File ====== */
 function generateGallery() {
+    const titleInput = document.getElementById("galleryTitle").value.trim();
     const input = document.getElementById("imageList").value;
 
     if (!input.trim()) {
         alert("Please enter at least one image name.");
         return;
     }
+
+    const galleryTitle = titleInput || "Photo Gallery";
 
     // Split by comma or new line
     const images = input
@@ -132,10 +148,9 @@ function generateGallery() {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Photo Gallery</title>
+<title>${galleryTitle}</title>
 
 <style>
-/* ===== Gallery Styling ===== */
 body {
     margin: 0;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -178,7 +193,6 @@ header {
     transform: scale(1.08);
 }
 
-/* Mobile Optimization */
 @media (max-width: 600px) {
     header {
         font-size: 22px;
@@ -190,7 +204,7 @@ header {
 
 <body>
 
-<header>Photo Gallery</header>
+<header>${galleryTitle}</header>
 
 <div class="gallery">
 ${imageTags}
