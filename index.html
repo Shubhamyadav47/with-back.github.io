@@ -31,8 +31,7 @@ h1 {
     text-align: center;
 }
 
-input[type="text"],
-textarea {
+input, textarea {
     width: 100%;
     padding: 12px;
     border-radius: 8px;
@@ -75,13 +74,6 @@ button {
 button:hover {
     opacity: 0.85;
 }
-
-.footer-note {
-    margin-top: 15px;
-    font-size: 12px;
-    color: #777;
-    text-align: center;
-}
 </style>
 </head>
 
@@ -90,34 +82,27 @@ button:hover {
 <div class="container">
     <h1>HTML Photo Gallery Generator</h1>
 
-    <!-- Gallery Title -->
     <input type="text" id="galleryTitle"
         placeholder="Enter Gallery Title"
         value="Photo Gallery">
 
-    <!-- Image List -->
     <textarea id="imageList"
-        placeholder="Enter image names (comma separated or one per line)
+        placeholder="Paste image names or full Windows paths
 
 Example:
-photo1.jpg
-wedding2.jpg
-img003.jpg"></textarea>
+E:\New folder\R6II6886.JPG
+E:\Wedding\IMG001.jpg
+photo2.jpg"></textarea>
 
     <div class="buttons">
         <button class="generate-btn" onclick="generateGallery()">Generate Gallery</button>
         <button class="download-btn" onclick="downloadFile()">Download HTML File</button>
-    </div>
-
-    <div class="footer-note">
-        Generates a fully standalone HTML gallery file.
     </div>
 </div>
 
 <script>
 let generatedHTML = "";
 
-/* ====== Generate Gallery File ====== */
 function generateGallery() {
     const titleInput = document.getElementById("galleryTitle").value.trim();
     const rawInput = document.getElementById("imageList").value;
@@ -129,12 +114,23 @@ function generateGallery() {
 
     const galleryTitle = titleInput || "Photo Gallery";
 
-    /* FIXED STRONG PARSER */
     const images = rawInput
-        .replace(/\r/g, "")           // Remove Windows line breaks
-        .split(/[\n,]+/)              // Split by comma OR newline
-        .map(name => name.trim())     // Remove leading & trailing spaces
-        .filter(name => name.length > 0); // Remove empty values
+        .replace(/\r/g, "")
+        .split(/[\n,]+/)
+        .map(name => {
+            name = name.trim();
+
+            // Convert backslashes to forward slashes
+            name = name.replace(/\\/g, "/");
+
+            // Extract only the file name from full path
+            if (name.includes("/")) {
+                name = name.substring(name.lastIndexOf("/") + 1);
+            }
+
+            return name.trim();
+        })
+        .filter(name => name.length > 0);
 
     if (images.length === 0) {
         alert("No valid image names found.");
@@ -219,10 +215,9 @@ ${imageTags}
 </html>
     `;
 
-    alert("Gallery generated successfully! Click Download HTML File.");
+    alert("Gallery generated successfully! Make sure your images are in the same folder as the HTML file.");
 }
 
-/* ====== Download File ====== */
 function downloadFile() {
     if (!generatedHTML) {
         alert("Please generate the gallery first.");
