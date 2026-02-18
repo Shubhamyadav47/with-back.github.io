@@ -6,7 +6,6 @@
 <title>Gallery Generator</title>
 
 <style>
-/* ====== App Styling ====== */
 body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     background: #f5f6fa;
@@ -27,7 +26,6 @@ body {
 
 h1 {
     margin-top: 0;
-    font-size: 24px;
     text-align: center;
 }
 
@@ -41,7 +39,7 @@ input, textarea {
 }
 
 textarea {
-    height: 150px;
+    height: 140px;
     resize: vertical;
 }
 
@@ -56,9 +54,8 @@ button {
     padding: 12px;
     border: none;
     border-radius: 8px;
-    font-size: 14px;
     cursor: pointer;
-    transition: 0.3s ease;
+    font-size: 14px;
 }
 
 .generate-btn {
@@ -70,33 +67,27 @@ button {
     background: #4CAF50;
     color: white;
 }
-
-button:hover {
-    opacity: 0.85;
-}
 </style>
 </head>
 
 <body>
 
 <div class="container">
-    <h1>HTML Photo Gallery Generator</h1>
+    <h1>Secure Gallery Generator</h1>
 
     <input type="text" id="galleryTitle"
-        placeholder="Enter Gallery Title"
+        placeholder="Gallery Title"
         value="Photo Gallery">
 
-    <textarea id="imageList"
-        placeholder="Paste image names or full Windows paths
+    <input type="text" id="galleryPassword"
+        placeholder="Optional Password (leave empty for no password)">
 
-Example:
-E:\New folder\R6II6886.JPG
-E:\Wedding\IMG001.jpg
-photo2.jpg"></textarea>
+    <textarea id="imageList"
+        placeholder="Paste image names or full Windows paths"></textarea>
 
     <div class="buttons">
-        <button class="generate-btn" onclick="generateGallery()">Generate Gallery</button>
-        <button class="download-btn" onclick="downloadFile()">Download HTML File</button>
+        <button class="generate-btn" onclick="generateGallery()">Generate</button>
+        <button class="download-btn" onclick="downloadFile()">Download</button>
     </div>
 </div>
 
@@ -104,38 +95,26 @@ photo2.jpg"></textarea>
 let generatedHTML = "";
 
 function generateGallery() {
-    const titleInput = document.getElementById("galleryTitle").value.trim();
+    const title = document.getElementById("galleryTitle").value.trim() || "Photo Gallery";
+    const password = document.getElementById("galleryPassword").value.trim();
     const rawInput = document.getElementById("imageList").value;
 
     if (!rawInput.trim()) {
-        alert("Please enter at least one image name.");
+        alert("Enter at least one image name.");
         return;
     }
-
-    const galleryTitle = titleInput || "Photo Gallery";
 
     const images = rawInput
         .replace(/\r/g, "")
         .split(/[\n,]+/)
         .map(name => {
-            name = name.trim();
-
-            // Convert backslashes to forward slashes
-            name = name.replace(/\\/g, "/");
-
-            // Extract only the file name from full path
+            name = name.trim().replace(/\\/g, "/");
             if (name.includes("/")) {
                 name = name.substring(name.lastIndexOf("/") + 1);
             }
-
-            return name.trim();
+            return name;
         })
         .filter(name => name.length > 0);
-
-    if (images.length === 0) {
-        alert("No valid image names found.");
-        return;
-    }
 
     let imageTags = images.map(name => `
         <div class="gallery-item">
@@ -143,27 +122,51 @@ function generateGallery() {
         </div>
     `).join("");
 
+    /* PASSWORD PROTECTION SCRIPT */
+    const passwordScript = password ? `
+    <script>
+    const correctPassword = "${password}";
+    function checkPassword() {
+        const entered = document.getElementById("passwordInput").value;
+        if (entered === correctPassword) {
+            document.getElementById("loginScreen").style.display = "none";
+            document.getElementById("galleryContent").style.display = "block";
+        } else {
+            alert("Incorrect Password");
+        }
+    }
+    <\/script>
+    ` : "";
+
+    const loginHTML = password ? `
+    <div id="loginScreen" class="login-screen">
+        <h2>${title}</h2>
+        <input type="password" id="passwordInput" placeholder="Enter Password">
+        <button onclick="checkPassword()">Enter</button>
+    </div>
+    ` : "";
+
     generatedHTML = `
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>${galleryTitle}</title>
+<title>${title}</title>
 
 <style>
 body {
     margin: 0;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-family: -apple-system, sans-serif;
     background: #f8f9fb;
 }
 
 header {
     text-align: center;
-    padding: 30px 20px;
+    padding: 30px;
     font-size: 28px;
     font-weight: 600;
-    background: #ffffff;
+    background: white;
     box-shadow: 0 2px 10px rgba(0,0,0,0.05);
 }
 
@@ -179,13 +182,10 @@ header {
 .gallery-item {
     overflow: hidden;
     border-radius: 10px;
-    background: #eee;
 }
 
 .gallery-item img {
     width: 100%;
-    height: 100%;
-    display: block;
     transition: transform 0.4s ease;
     object-fit: cover;
 }
@@ -194,40 +194,66 @@ header {
     transform: scale(1.08);
 }
 
-@media (max-width: 600px) {
-    header {
-        font-size: 22px;
-        padding: 20px;
-    }
+/* LOGIN SCREEN */
+.login-screen {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.login-screen input {
+    padding: 12px;
+    margin: 15px 0;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+}
+
+.login-screen button {
+    padding: 12px 25px;
+    border: none;
+    border-radius: 8px;
+    background: #111;
+    color: white;
+    cursor: pointer;
+}
+
+#galleryContent {
+    display: ${password ? "none" : "block"};
 }
 </style>
 </head>
 
 <body>
 
-<header>${galleryTitle}</header>
+${loginHTML}
 
+<div id="galleryContent">
+<header>${title}</header>
 <div class="gallery">
 ${imageTags}
 </div>
+</div>
+
+${passwordScript}
 
 </body>
 </html>
     `;
 
-    alert("Gallery generated successfully! Make sure your images are in the same folder as the HTML file.");
+    alert("Gallery generated successfully!");
 }
 
 function downloadFile() {
     if (!generatedHTML) {
-        alert("Please generate the gallery first.");
+        alert("Generate gallery first.");
         return;
     }
-
     const blob = new Blob([generatedHTML], { type: "text/html" });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
-    link.download = "photo-gallery.html";
+    link.download = "secure-gallery.html";
     link.click();
 }
 </script>
